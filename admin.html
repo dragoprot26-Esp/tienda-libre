@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda Libre — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f9; --surface:#fff; --surface-2:#f7f8fc;
+  --ink:#1c1f2b; --ink-2:#5c6275; --muted:#9aa0b4;
+  --pri:#5b5bf0; --pri-2:#7a5bf0; --pri-soft:#ecebff; --on-pri:#fff;
+  --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+  --border:#e6e8f0; --radius:16px; --radius-sm:10px;
+  --shadow:0 10px 30px rgba(40,40,90,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh}
+h1,h2,h3,.disp{font-family:'Fraunces',serif;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:1rem;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--pri)}
+label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:14px 0 5px}
+.btn{border:none;background:var(--pri);color:var(--on-pri);border-radius:var(--radius-sm);padding:13px 18px;font-weight:600;font-size:.95rem;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .15s}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-block{width:100%}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--border)}
+.btn-soft{background:var(--pri-soft);color:var(--pri)}
+.btn-sm{padding:8px 12px;font-size:.85rem;border-radius:8px}
+.btn-bad{background:#fde8e8;color:var(--bad)}
+
+/* ===== LOGIN ===== */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:22px;
+  background:linear-gradient(160deg,#eef0ff,#f6f1ff 60%,#fff)}
+.login-card{background:var(--surface);border-radius:24px;box-shadow:var(--shadow);padding:34px 26px;width:100%;max-width:400px}
+.login-logo{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;font-size:2rem;
+  background:linear-gradient(140deg,var(--pri),var(--pri-2));color:#fff;margin:0 auto 14px}
+.login-card h1{text-align:center;font-size:1.7rem}
+.login-card .sub{text-align:center;color:var(--ink-2);font-size:.9rem;margin:4px 0 18px}
+.err{color:var(--bad);font-size:.85rem;margin-top:8px;display:none}
+.link{background:none;border:none;color:var(--pri);font-weight:600;font-size:.85rem;width:100%;margin-top:12px;padding:8px}
+
+/* ===== PANEL ===== */
+.topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:12px clamp(14px,3vw,28px)}
+.topbar .tlogo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:1.4rem;
+  background:linear-gradient(140deg,var(--pri),var(--pri-2));color:#fff;flex:0 0 auto;overflow:hidden}
+.topbar .tlogo img{width:100%;height:100%;object-fit:cover}
+.topbar .tname{flex:1;min-width:0}
+.topbar .tname b{font-family:'Fraunces';font-size:1.1rem;display:block;line-height:1.1}
+.topbar .tname small{color:var(--muted);font-size:.78rem}
+.chip{font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.chip.v{background:#e7f8ee;color:var(--ok)} .chip.a{background:#fef3e2;color:var(--warn)} .chip.r{background:#fde8e8;color:var(--bad)}
+.iconbtn{border:1px solid var(--border);background:var(--surface);border-radius:10px;width:40px;height:40px;font-size:1.1rem;flex:0 0 auto}
+
+.tabs{display:flex;gap:8px;padding:14px clamp(14px,3vw,28px) 0;max-width:920px;margin:0 auto;width:100%}
+.tab{flex:1;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:12px;font-weight:600;color:var(--ink-2)}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.wrap{max-width:920px;margin:0 auto;padding:18px clamp(14px,3vw,28px) 60px;width:100%}
+.sec{display:none} .sec.on{display:block}
+.sectitle{font-size:1.35rem;margin:6px 0 14px}
+
+/* productos */
+.prod-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:12px;margin-bottom:10px}
+.prod-row .th{width:54px;height:54px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-size:1.7rem;flex:0 0 auto;overflow:hidden}
+.prod-row .th img{width:100%;height:100%;object-fit:cover}
+.prod-row .pi{flex:1;min-width:0}
+.prod-row .pi .n{font-weight:600}
+.prod-row .pi .m{font-size:.8rem;color:var(--muted)}
+.prod-row .pi .pr{font-family:'Fraunces';font-weight:600;color:var(--pri)}
+.cat-chip{display:inline-block;font-size:.7rem;background:var(--pri-soft);color:var(--pri);padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:600}
+.tag-ult{display:inline-block;font-size:.66rem;background:var(--ink);color:#fff;padding:2px 7px;border-radius:999px;margin-left:6px}
+.prod-actions{display:flex;gap:6px;flex:0 0 auto}
+.empty{text-align:center;color:var(--muted);padding:40px 16px}
+.empty .e{font-size:3rem;display:block;margin-bottom:8px}
+
+/* modelos grid */
+.modelos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:6px}
+.modelo-op{border:2px solid var(--border);border-radius:12px;padding:12px;text-align:center;background:var(--surface);font-weight:600;font-size:.85rem;color:var(--ink-2)}
+.modelo-op .sw{height:34px;border-radius:8px;margin-bottom:8px}
+.modelo-op.on{border-color:var(--pri);color:var(--pri)}
+
+/* extra fields */
+.extra-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.extra-row input{flex:1}
+.extra-row .x{flex:0 0 auto;width:42px;height:42px;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;font-size:1.1rem}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(20,20,40,.5);backdrop-filter:blur(3px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.show{display:flex}
+@media(min-width:640px){.overlay{align-items:center;padding:24px}}
+.sheet{background:var(--surface);width:100%;max-width:520px;border-radius:22px 22px 0 0;max-height:94vh;overflow-y:auto;padding:20px}
+@media(min-width:640px){.sheet{border-radius:var(--radius)}}
+.sheet h3{font-size:1.4rem;margin-bottom:6px}
+.sheet .close{float:right;border:none;background:var(--surface-2);width:36px;height:36px;border-radius:999px;font-size:1.1rem}
+.img-prev{width:100%;height:160px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-size:3rem;overflow:hidden;border:2px dashed var(--border);margin-top:6px}
+.img-prev img{width:100%;height:100%;object-fit:cover}
+.row2{display:flex;gap:10px}.row2>div{flex:1}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px}
+.check input{width:auto}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:600;font-size:.9rem;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.hint{font-size:.8rem;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="vistaLogin" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">🛍️</div>
+    <h1>Tienda Libre</h1>
+    <p class="sub">Panel de tu local</p>
+    <label>Usuario</label>
+    <input id="loginUser" autocomplete="username" placeholder="Tu usuario">
+    <label>Contraseña</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="Tu contraseña">
+    <div class="err" id="loginErr"></div>
+    <button class="btn btn-block" id="loginBtn" style="margin-top:16px">Ingresar →</button>
+    <button class="link" id="linkActivar">🔑 Primera vez — activar mi licencia</button>
+  </div>
+</div>
+
+<!-- ===== PANEL ===== -->
+<div id="vistaPanel" style="display:none">
+  <div class="topbar">
+    <div class="tlogo" id="barLogo">🛍️</div>
+    <div class="tname"><b id="barNombre">Tienda Libre</b><small id="barUser"></small></div>
+    <span class="chip v" id="barLic">—</span>
+    <button class="iconbtn" id="btnVista" title="Vista de página">👁️</button>
+    <button class="iconbtn" id="btnSalir" title="Cerrar sesión">🚪</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-sec="secProductos">📦 Productos</button>
+    <button class="tab" data-sec="secConfig">⚙️ Configuración</button>
+  </div>
+
+  <div class="wrap">
+    <!-- PRODUCTOS -->
+    <section id="secProductos" class="sec on">
+      <button class="btn btn-block" id="btnAddProd">+ Agregar producto</button>
+      <div id="listaProd" style="margin-top:16px"></div>
+    </section>
+
+    <!-- CONFIG -->
+    <section id="secConfig" class="sec">
+      <h2 class="sectitle">Datos del local</h2>
+      <label>Nombre del local</label>
+      <input id="cNombre" placeholder="Ej: Tienda Libre">
+      <label>Frase / lema (texto chico)</label>
+      <input id="cTagline" placeholder="Ropa & accesorios · Encargá y retirá">
+      <div class="row2">
+        <div><label>Logo (emoji)</label><input id="cLogoEmoji" maxlength="3" placeholder="🛍️"></div>
+        <div><label>o subir imagen</label><input id="cLogoFile" type="file" accept="image/*"></div>
+      </div>
+      <div class="img-prev" id="cLogoPrev">🛍️</div>
+      <div class="row2">
+        <div><label>Dirección</label><input id="cDireccion" placeholder="Calle 123, Ciudad"></div>
+        <div><label>Teléfono</label><input id="cTelefono" placeholder="221 555 1234"></div>
+      </div>
+
+      <h2 class="sectitle" style="margin-top:24px">Modelo de página</h2>
+      <p class="hint">Elegí cómo se ve tu tienda para los clientes.</p>
+      <div class="modelos-grid" id="modelosGrid"></div>
+
+      <button class="btn btn-block" id="btnGuardarConfig" style="margin-top:22px">💾 Guardar configuración</button>
+    </section>
+  </div>
+</div>
+
+<!-- ===== MODAL ACTIVAR LICENCIA ===== -->
+<div class="overlay" id="ovLic">
+  <div class="sheet" style="max-width:420px">
+    <button class="close" data-close>×</button>
+    <h3>Activar licencia</h3>
+    <p class="hint">Ingresá el código que te dio tu proveedor.</p>
+    <label>Código de licencia</label>
+    <input id="inputCodigo" placeholder="TLIB-..." style="text-transform:uppercase">
+    <div class="err" id="licErr"></div>
+    <button class="btn btn-block" id="btnActivar" style="margin-top:16px">Activar →</button>
+    <p class="hint" id="licMsg" style="margin-top:12px"></p>
+  </div>
+</div>
+
+<!-- ===== MODAL PRODUCTO ===== -->
+<div class="overlay" id="ovProd">
+  <div class="sheet">
+    <button class="close" data-close>×</button>
+    <h3 id="prodModalTit">Nuevo producto</h3>
+    <div class="img-prev" id="prodPrev">👕</div>
+    <label>Foto del producto (desde el celu)</label>
+    <input id="prodFile" type="file" accept="image/*">
+    <label>Nombre</label>
+    <input id="prodNombre" placeholder="Ej: Buzo oversize crema">
+    <div class="row2">
+      <div><label>Categoría</label><input id="prodCat" list="catList" placeholder="Buzos"><datalist id="catList"></datalist></div>
+      <div><label>Marca</label><input id="prodMarca" placeholder="Urban Co."></div>
+    </div>
+    <label>Precio</label>
+    <input id="prodPrecio" type="number" inputmode="numeric" placeholder="24999">
+    <label>Descripción</label>
+    <textarea id="prodDesc" rows="2" placeholder="Detalle breve del producto"></textarea>
+
+    <label>Campos extra (opcional)</label>
+    <div id="extraCont"></div>
+    <button class="btn btn-soft btn-sm" id="btnAddExtra" type="button">+ Agregar campo</button>
+
+    <div class="check"><input type="checkbox" id="prodUlt"><label style="margin:0">Marcar como "Últimos disponibles"</label></div>
+
+    <button class="btn btn-block" id="btnGuardarProd" style="margin-top:18px">💾 Guardar producto</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/comun.js"></script>
+<script src="js/licencia.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
