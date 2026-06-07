@@ -1,1 +1,603 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="aurora">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda Libre — Ropa & Accesorios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Fredoka:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&family=Baloo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================== TEMAS (MODELOS) ===================== */
+:root,
+[data-tema="aurora"]{
+  --font-display:'Fredoka'; --font-body:'Outfit';
+  --bg: linear-gradient(165deg,#fff1f4 0%, #ffe3ec 38%, #ffd9c2 100%);
+  --surface:#ffffff; --surface-2:#fff6f8;
+  --text:#2a2230; --text-2:#6b5b6b; --muted:#a695a4;
+  --accent:#e84a8a; --accent-2:#ff7a59; --on-accent:#fff; --accent-soft:#ffe2ee;
+  --border:#f4dae3; --radius:20px; --radius-sm:14px;
+  --shadow:0 12px 32px rgba(232,74,138,.14);
+  --tile: linear-gradient(150deg,#ffe2ee,#ffd9c2);
+}
+[data-tema="noir"]{
+  --font-display:'Fraunces'; --font-body:'Outfit';
+  --bg: radial-gradient(1100px 560px at 72% -12%, #2c2720 0%, #0e0e10 56%), #0e0e10;
+  --surface:#161619; --surface-2:#1d1d22;
+  --text:#f3ece0; --text-2:#b9af9d; --muted:#8a8276;
+  --accent:#d4af6a; --accent-2:#c79f56; --on-accent:#1a160f; --accent-soft:#2a2318;
+  --border:#2b2b31; --radius:14px; --radius-sm:10px;
+  --shadow:0 20px 55px rgba(0,0,0,.55);
+  --tile: linear-gradient(150deg,#222019,#15140f);
+}
+[data-tema="lumen"]{
+  --font-display:'Fraunces'; --font-body:'Hanken Grotesk';
+  --bg:#f6f5f1;
+  --surface:#ffffff; --surface-2:#faf9f6;
+  --text:#191a17; --text-2:#55574f; --muted:#8b8d84;
+  --accent:#c2410c; --accent-2:#9a3412; --on-accent:#fff; --accent-soft:#f5e6dd;
+  --border:#e7e5df; --radius:8px; --radius-sm:6px;
+  --shadow:0 10px 28px rgba(0,0,0,.07);
+  --tile: linear-gradient(150deg,#f1efe9,#e9e6df);
+}
+[data-tema="verano"]{
+  --font-display:'Baloo 2'; --font-body:'Outfit';
+  --bg: linear-gradient(160deg,#eafcff 0%, #f3fffb 42%, #fff6ef 100%);
+  --surface:#ffffff; --surface-2:#f1fbff;
+  --text:#173a40; --text-2:#4a6b70; --muted:#8fb0b3;
+  --accent:#ff6b6b; --accent-2:#1bc6c6; --on-accent:#fff; --accent-soft:#e6fbfb;
+  --border:#d9f0f2; --radius:22px; --radius-sm:14px;
+  --shadow:0 12px 30px rgba(27,198,198,.18);
+  --tile: linear-gradient(150deg,#e6fbfb,#ffe9e3);
+}
+[data-tema="urbano"]{
+  --font-display:'Oswald'; --font-body:'Outfit';
+  --bg: linear-gradient(180deg,#202125 0%, #161719 100%);
+  --surface:#232428; --surface-2:#2b2c31;
+  --text:#f2f2f0; --text-2:#a8a8a4; --muted:#7c7c78;
+  --accent:#ff5a1f; --accent-2:#ff7a3c; --on-accent:#15110d; --accent-soft:#33231a;
+  --border:#34353a; --radius:6px; --radius-sm:4px;
+  --shadow:0 16px 40px rgba(0,0,0,.5);
+  --tile: linear-gradient(150deg,#2c2d32,#202024);
+}
+[data-tema="vintage"]{
+  --font-display:'Playfair Display'; --font-body:'Hanken Grotesk';
+  --bg: linear-gradient(160deg,#fbeef0 0%, #f7ece0 50%, #f3e3d3 100%);
+  --surface:#fffaf6; --surface-2:#f9efe6;
+  --text:#4a3636; --text-2:#7d6460; --muted:#a98f88;
+  --accent:#b06a78; --accent-2:#8a5a4a; --on-accent:#fff; --accent-soft:#f3e0e4;
+  --border:#ecd9d2; --radius:14px; --radius-sm:8px;
+  --shadow:0 12px 30px rgba(176,106,120,.16);
+  --tile: linear-gradient(150deg,#f3e0e4,#efe0cf);
+}
+[data-tema="neon"]{
+  --font-display:'Sora'; --font-body:'Sora';
+  --bg: radial-gradient(900px 500px at 20% -10%, #25103a 0%, #0a0712 56%), #0a0712;
+  --surface:#130d20; --surface-2:#1a1230;
+  --text:#f0eaff; --text-2:#b4a7d6; --muted:#7d72a0;
+  --accent:#ff2bd1; --accent-2:#1fe0ff; --on-accent:#0a0712; --accent-soft:#2a1140;
+  --border:#2a2150; --radius:14px; --radius-sm:10px;
+  --shadow:0 0 30px rgba(255,43,209,.38);
+  --tile: linear-gradient(150deg,#241140,#10243a);
+}
+[data-tema="natural"]{
+  --font-display:'Fraunces'; --font-body:'Hanken Grotesk';
+  --bg: linear-gradient(160deg,#f3f4ea 0%, #eef0e2 45%, #f6efe2 100%);
+  --surface:#fcfcf6; --surface-2:#f1f2e6;
+  --text:#2f352a; --text-2:#5e6553; --muted:#909781;
+  --accent:#6a8350; --accent-2:#a8794f; --on-accent:#fff; --accent-soft:#e7eed9;
+  --border:#e0e3d0; --radius:16px; --radius-sm:10px;
+  --shadow:0 12px 30px rgba(106,131,80,.16);
+  --tile: linear-gradient(150deg,#e7eed9,#efe2cf);
+}
+[data-tema="premium"]{
+  --font-display:'Sora'; --font-body:'Outfit';
+  --bg: linear-gradient(160deg,#1a1c20 0%, #232730 60%, #15171b 100%);
+  --surface:rgba(255,255,255,.055); --surface-2:rgba(255,255,255,.09);
+  --text:#eef1f5; --text-2:#aab2bd; --muted:#7c8590;
+  --accent:#c8cdd6; --accent-2:#9aa3af; --on-accent:#1a1c20; --accent-soft:rgba(255,255,255,.1);
+  --border:rgba(255,255,255,.12); --radius:16px; --radius-sm:10px;
+  --shadow:0 18px 50px rgba(0,0,0,.5);
+  --tile: linear-gradient(150deg,rgba(255,255,255,.10),rgba(255,255,255,.03));
+}
+[data-tema="pastel"]{
+  --font-display:'Baloo 2'; --font-body:'Outfit';
+  --bg: linear-gradient(160deg,#efe7ff 0%, #e7f3ff 45%, #fff7e0 100%);
+  --surface:#ffffff; --surface-2:#f6f1ff;
+  --text:#3b3357; --text-2:#6f6890; --muted:#a59ec0;
+  --accent:#8b6ff0; --accent-2:#ffc24b; --on-accent:#fff; --accent-soft:#ece4ff;
+  --border:#e6def7; --radius:24px; --radius-sm:16px;
+  --shadow:0 12px 30px rgba(139,111,240,.18);
+  --tile: linear-gradient(150deg,#ece4ff,#fff2cc);
+}
+/* Ajustes finos por tema */
+[data-tema="urbano"] h1,[data-tema="urbano"] h2,[data-tema="urbano"] h3{text-transform:uppercase;letter-spacing:.02em;font-weight:600}
+[data-tema="urbano"] .card .nombre{text-transform:uppercase;letter-spacing:.02em;font-size:.9rem}
+[data-tema="neon"] .card:hover{box-shadow:0 0 28px rgba(31,224,255,.4);border-color:var(--accent)}
+[data-tema="neon"] .card .precio,[data-tema="neon"] .det-body .precio{color:var(--accent-2)}
+[data-tema="premium"] .card,[data-tema="premium"] header{backdrop-filter:blur(10px)}
+[data-tema="premium"] .cat{backdrop-filter:blur(8px)}
 
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  font-family:var(--font-body),sans-serif;
+  background:var(--bg); background-attachment:fixed;
+  color:var(--text); line-height:1.5; padding-bottom:90px;
+  transition:background .4s ease,color .3s ease;
+}
+h1,h2,h3,.disp{font-family:var(--font-display),serif;font-weight:600;letter-spacing:-.01em}
+
+/* ===================== HEADER ===================== */
+header{
+  position:sticky; top:0; z-index:50;
+  background:color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  padding:14px clamp(16px,4vw,40px);
+  display:flex; align-items:center; gap:14px;
+}
+.logo{
+  width:50px;height:50px;border-radius:16px;flex:0 0 auto;
+  display:grid;place-items:center;font-size:1.6rem;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));
+  color:var(--on-accent); box-shadow:var(--shadow);
+}
+[data-tema="lumen"] .logo{border-radius:8px}
+.brand{flex:1;min-width:0}
+.brand h1{font-size:clamp(1.25rem,3.4vw,1.7rem);line-height:1.05}
+.brand .tag{font-size:.82rem;color:var(--text-2);margin-top:2px}
+.cart-btn{
+  position:relative;border:none;cursor:pointer;flex:0 0 auto;
+  background:var(--accent);color:var(--on-accent);
+  border-radius:999px;padding:11px 18px;font-family:var(--font-body);
+  font-weight:600;font-size:.92rem;display:flex;align-items:center;gap:8px;
+  box-shadow:var(--shadow);transition:transform .15s, filter .15s;
+}
+.cart-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.cart-btn:active{transform:translateY(0)}
+.cart-count{
+  position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;
+  background:var(--text);color:var(--surface);border-radius:999px;
+  font-size:.72rem;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 6px;
+  border:2px solid var(--surface);
+}
+.cart-count.show{display:flex}
+
+/* ===================== INFO BAR ===================== */
+.infobar{
+  display:flex;flex-wrap:wrap;gap:6px 22px;justify-content:center;
+  padding:10px 16px;font-size:.83rem;color:var(--text-2);
+  border-bottom:1px solid var(--border);
+  background:color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.infobar span{display:inline-flex;align-items:center;gap:6px}
+
+/* ===================== HERO ===================== */
+.hero{text-align:center;padding:clamp(26px,6vw,56px) 20px 8px}
+.hero .kicker{
+  font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin-bottom:10px;
+}
+.hero h2{font-size:clamp(1.9rem,6vw,3.2rem);line-height:1.02;max-width:14ch;margin:0 auto}
+.hero p{color:var(--text-2);margin:14px auto 0;max-width:46ch;font-size:1.02rem}
+
+/* ===================== CATEGORÍAS ===================== */
+.cats{
+  position:sticky;top:79px;z-index:40;
+  display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;
+  padding:16px clamp(16px,4vw,40px);
+  background:color-mix(in srgb, var(--surface) 80%, transparent);
+  -webkit-overflow-scrolling:touch;
+}
+.cats::-webkit-scrollbar{display:none}
+.cat{
+  flex:0 0 auto;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);border-radius:999px;padding:9px 18px;cursor:pointer;
+  font-family:var(--font-body);font-weight:600;font-size:.9rem;white-space:nowrap;
+  transition:all .18s;
+}
+.cat:hover{border-color:var(--accent)}
+.cat.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+[data-tema="lumen"] .cat,[data-tema="lumen"] .cat.active{border-radius:6px}
+
+/* ===================== GRILLA ===================== */
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));
+  gap:clamp(12px,2.5vw,22px);
+  padding:18px clamp(16px,4vw,40px) 40px;max-width:1240px;margin:0 auto;
+}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  transition:transform .2s, box-shadow .2s, border-color .2s;
+  animation:rise .5s both;
+}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.tile{
+  aspect-ratio:1/1;background:var(--tile);display:grid;place-items:center;
+  font-size:3.4rem;position:relative;
+}
+.tile img{width:100%;height:100%;object-fit:cover}
+.badge{
+  position:absolute;top:10px;left:10px;background:var(--text);color:var(--surface);
+  font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;
+}
+.card-body{padding:13px 14px 15px;display:flex;flex-direction:column;gap:3px;flex:1}
+.card .marca{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.card .nombre{font-weight:600;font-size:.98rem;line-height:1.2}
+.card .precio{font-family:var(--font-display);font-size:1.12rem;margin-top:4px}
+.card .add{
+  margin-top:11px;border:none;cursor:pointer;width:100%;
+  background:var(--accent-soft);color:var(--accent);
+  border-radius:var(--radius-sm);padding:9px;font-family:var(--font-body);
+  font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .15s,color .15s;
+}
+.card .add:hover{background:var(--accent);color:var(--on-accent)}
+[data-tema="noir"] .card .add{background:var(--accent-soft);color:var(--accent)}
+[data-tema="noir"] .card .add:hover{background:var(--accent);color:var(--on-accent)}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ===================== MODALES ===================== */
+.overlay{
+  position:fixed;inset:0;background:rgba(15,10,18,.55);backdrop-filter:blur(4px);
+  z-index:100;display:none;align-items:flex-end;justify-content:center;padding:0;
+}
+.overlay.show{display:flex}
+@media(min-width:680px){.overlay{align-items:center;padding:24px}}
+.sheet{
+  background:var(--surface);width:100%;max-width:520px;
+  border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;
+  box-shadow:0 -10px 40px rgba(0,0,0,.3);animation:slideUp .3s ease;
+}
+@media(min-width:680px){.sheet{border-radius:var(--radius)}}
+[data-tema="lumen"] .sheet{border-radius:10px 10px 0 0}
+@keyframes slideUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0}
+.sheet-head .x{
+  border:none;background:var(--surface-2);color:var(--text);width:38px;height:38px;
+  border-radius:999px;font-size:1.1rem;cursor:pointer;line-height:1;
+}
+
+/* detalle producto */
+.det-tile{margin:8px 18px 0;border-radius:var(--radius);background:var(--tile);
+  aspect-ratio:4/3;display:grid;place-items:center;font-size:6rem;overflow:hidden}
+.det-tile img{width:100%;height:100%;object-fit:cover}
+.det-body{padding:18px}
+.det-body .marca{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.det-body h3{font-size:1.5rem;margin:2px 0 6px}
+.det-body .precio{font-family:var(--font-display);font-size:1.7rem;color:var(--accent)}
+.det-body .desc{color:var(--text-2);margin:12px 0 18px;font-size:.96rem}
+.qty{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:999px;width:fit-content;overflow:hidden}
+.qty button{border:none;background:var(--surface-2);color:var(--text);width:42px;height:42px;font-size:1.2rem;cursor:pointer}
+.qty span{min-width:46px;text-align:center;font-weight:700}
+.btn-main{
+  width:100%;border:none;cursor:pointer;margin-top:16px;
+  background:var(--accent);color:var(--on-accent);border-radius:var(--radius-sm);
+  padding:15px;font-family:var(--font-body);font-weight:700;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:var(--shadow);transition:filter .15s,transform .15s;
+}
+.btn-main:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.btn-ghost{
+  width:100%;border:1px solid var(--border);background:transparent;color:var(--text);
+  cursor:pointer;margin-top:10px;border-radius:var(--radius-sm);padding:13px;
+  font-family:var(--font-body);font-weight:600;font-size:.95rem;
+}
+
+/* carrito */
+.cart-list{padding:6px 18px 0}
+.citem{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.citem .ti{width:54px;height:54px;border-radius:12px;background:var(--tile);display:grid;place-items:center;font-size:1.6rem;flex:0 0 auto}
+.citem .info{flex:1;min-width:0}
+.citem .info .n{font-weight:600;font-size:.95rem}
+.citem .info .p{color:var(--text-2);font-size:.85rem}
+.citem .qmini{display:flex;align-items:center;gap:8px}
+.citem .qmini button{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;font-size:1rem}
+.citem .qmini span{min-width:20px;text-align:center;font-weight:700;font-size:.9rem}
+.cart-empty{text-align:center;color:var(--muted);padding:48px 20px}
+.cart-empty .em{font-size:3rem;display:block;margin-bottom:10px}
+.cart-foot{padding:18px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border)}
+.cart-total{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.cart-total b{font-family:var(--font-display);font-size:1.5rem}
+
+/* confirmación */
+.conf{padding:32px 24px;text-align:center}
+.conf .ico{font-size:3.4rem}
+.conf h3{font-size:1.6rem;margin:8px 0 6px}
+.conf .codigo{
+  font-family:var(--font-display);font-size:2.6rem;letter-spacing:.18em;
+  color:var(--accent);background:var(--accent-soft);border-radius:var(--radius-sm);
+  padding:14px 10px;margin:14px 0;font-weight:700;
+}
+.conf .datos{color:var(--text-2);font-size:.92rem;line-height:1.6;margin:10px 0 4px}
+.conf .nota{font-size:.8rem;color:var(--muted);margin-top:14px}
+
+/* ===================== SWITCHER DE MODELO ===================== */
+.modelos{
+  position:fixed;left:8px;right:8px;bottom:14px;z-index:60;
+  display:flex;align-items:center;gap:6px;
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  border:1px solid var(--border);border-radius:999px;padding:8px 10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.22);backdrop-filter:blur(10px);
+  overflow-x:auto;scrollbar-width:none;white-space:nowrap;
+}
+.modelos::-webkit-scrollbar{display:none}
+.modelos .lbl{font-size:.74rem;color:var(--text-2);font-weight:600;flex:0 0 auto;padding-left:4px}
+.modelos button{
+  flex:0 0 auto;border:none;cursor:pointer;border-radius:999px;padding:7px 13px;
+  font-family:var(--font-body);font-weight:600;font-size:.8rem;
+  background:var(--surface-2);color:var(--text);transition:all .15s;
+}
+.modelos button.on{background:var(--accent);color:var(--on-accent)}
+
+footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 28px;opacity:.8}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="hLogo">🛍️</div>
+  <div class="brand">
+    <h1 id="hNombre">Tienda Libre</h1>
+    <div class="tag" id="hTag">Ropa & accesorios · Encargá y retirá</div>
+  </div>
+  <button class="cart-btn" id="cartBtn">
+    🛒 <span>Carrito</span>
+    <span class="cart-count" id="cartCount">0</span>
+  </button>
+</header>
+
+<div class="infobar">
+  <span id="hDir">📍 Av. Siempreviva 742, La Plata</span>
+  <span id="hTel">📞 221 555 1234</span>
+</div>
+
+<section class="hero">
+  <div class="kicker">Nueva temporada</div>
+  <h2 id="heroTit">Tu estilo, a un toque</h2>
+  <p id="heroSub">Elegí lo que te gusta, sumalo al carrito y retiralo en el local con tu código. Sin filas, sin esperas.</p>
+</section>
+
+<nav class="cats" id="cats"></nav>
+<main class="grid" id="grid"></main>
+<footer>Hecho con <b>Tienda Libre</b> · tu tienda online en minutos</footer>
+
+<!-- Modal detalle -->
+<div class="overlay" id="ovDet">
+  <div class="sheet">
+    <div class="sheet-head"><div></div><button class="x" data-close>×</button></div>
+    <div class="det-tile" id="detTile">👕</div>
+    <div class="det-body">
+      <div class="marca" id="detMarca">Marca</div>
+      <h3 id="detNombre">Producto</h3>
+      <div class="precio" id="detPrecio">$0</div>
+      <p class="desc" id="detDesc"></p>
+      <div class="qty">
+        <button id="qMenos">−</button><span id="qVal">1</span><button id="qMas">+</button>
+      </div>
+      <button class="btn-main" id="detAdd">🛒 Agregar al carrito</button>
+      <button class="btn-ghost" data-close>Seguir mirando</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal carrito -->
+<div class="overlay" id="ovCart">
+  <div class="sheet">
+    <div class="sheet-head"><h3 style="font-size:1.3rem">Tu carrito</h3><button class="x" data-close>×</button></div>
+    <div class="cart-list" id="cartList"></div>
+    <div class="cart-foot" id="cartFoot" style="display:none">
+      <div class="cart-total"><span>Total del encargo</span><b id="cartTotal">$0</b></div>
+      <button class="btn-main" id="confirmarBtn">Confirmar encargo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmación -->
+<div class="overlay" id="ovConf">
+  <div class="sheet">
+    <div class="conf">
+      <div class="ico">🎉</div>
+      <h3>¡Encargo listo!</h3>
+      <p style="color:var(--text-2)">Presentate en el local con este código para retirar y pagar:</p>
+      <div class="codigo" id="confCodigo">A7K2P</div>
+      <div class="datos" id="confDatos"></div>
+      <p class="nota">En la próxima etapa, este código le llega solo por WhatsApp o mail, y al local le aparece en su panel. 😉</p>
+      <button class="btn-main" data-close style="margin-top:18px">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Selector de modelo (demo) -->
+<div class="modelos">
+  <span class="lbl">Modelo:</span>
+  <button data-tema="aurora" class="on">Aurora</button>
+  <button data-tema="noir">Noir</button>
+  <button data-tema="lumen">Lumen</button>
+  <button data-tema="verano">Verano</button>
+  <button data-tema="urbano">Urbano</button>
+  <button data-tema="vintage">Vintage</button>
+  <button data-tema="neon">Neón</button>
+  <button data-tema="natural">Natural</button>
+  <button data-tema="premium">Premium</button>
+  <button data-tema="pastel">Pastel</button>
+</div>
+
+<script>
+/* ============ DATOS DEMO (en la Etapa B salen del panel/nube) ============ */
+const TIENDA = {
+  nombre: "Tienda Libre",
+  tagline: "Ropa & accesorios · Encargá y retirá",
+  logo: "🛍️",
+  direccion: "Av. Siempreviva 742, La Plata",
+  telefono: "221 555 1234"
+};
+const PRODUCTOS = [
+  {id:'p1', cat:'Buzos',     nombre:'Buzo Oversize Crema',   marca:'Urban Co.',  precio:24999, emoji:'🧥', ultimos:true,  desc:'Buzo amplio de algodón frisado, súper abrigado y con caída moderna. Unisex.'},
+  {id:'p2', cat:'Buzos',     nombre:'Buzo Capucha Negro',    marca:'Urban Co.',  precio:22999, emoji:'🧥', desc:'Clásico con capucha y bolsillo canguro. El que nunca falla.'},
+  {id:'p3', cat:'Remeras',   nombre:'Remera Algodón Blanca', marca:'Basics',     precio:8999,  emoji:'👕', desc:'100% algodón peinado, cuello reforzado. Básico esencial.'},
+  {id:'p4', cat:'Remeras',   nombre:'Remera Estampada Sol',  marca:'Basics',     precio:10999, emoji:'👕', ultimos:true, desc:'Estampa exclusiva en serigrafía, edición limitada.'},
+  {id:'p5', cat:'Bufandas',  nombre:'Bufanda Lana Trenza',   marca:'Abrigo',     precio:13999, emoji:'🧣', desc:'Tejido trenzado en lana suave, bien larga y calentita.'},
+  {id:'p6', cat:'Bufandas',  nombre:'Bufanda Cuadrillé',     marca:'Abrigo',     precio:12499, emoji:'🧣', desc:'Estilo escocés en tonos cálidos. Combina con todo.'},
+  {id:'p7', cat:'Gorras',    nombre:'Gorra Clásica',         marca:'Headline',   precio:9999,  emoji:'🧢', desc:'Visera curva, ajuste regulable. Bordado frontal.'},
+  {id:'p8', cat:'Gorras',    nombre:'Gorra Trucker',         marca:'Headline',   precio:11499, emoji:'🧢', ultimos:true, desc:'Frente de gabardina y malla trasera, fresca para el verano.'},
+  {id:'p9', cat:'Perfumes',  nombre:'Perfume Vainilla 100ml',marca:'Esencia',    precio:18999, emoji:'🌸', desc:'Fragancia dulce y envolvente, larga duración. Frasco 100 ml.'},
+  {id:'p10',cat:'Perfumes',  nombre:'Perfume Cítrico 100ml', marca:'Esencia',    precio:18999, emoji:'🌿', desc:'Notas frescas de bergamota y limón. Ideal para el día.'},
+  {id:'p11',cat:'Remeras',   nombre:'Musculosa Rib',         marca:'Basics',     precio:7499,  emoji:'🎽', desc:'Morley acanalado, entallada y cómoda.'},
+  {id:'p12',cat:'Gorras',    nombre:'Piluso Lino',           marca:'Headline',   precio:10499, emoji:'👒', desc:'Sombrero de lino liviano, perfecto para la playa.'}
+];
+
+/* ============ ESTADO ============ */
+let filtro = 'Todos';
+let carrito = [];           // {id, qty}
+let detActual = null;       // producto abierto en el modal
+let detQty = 1;
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Number(n).toLocaleString('es-AR');
+
+/* ============ RENDER ============ */
+function pintarMarca(){
+  $('hNombre').textContent = TIENDA.nombre;
+  $('hTag').textContent = TIENDA.tagline;
+  $('hLogo').textContent = TIENDA.logo;
+  $('hDir').textContent = '📍 ' + TIENDA.direccion;
+  $('hTel').textContent = '📞 ' + TIENDA.telefono;
+}
+function categorias(){
+  const set = [...new Set(PRODUCTOS.map(p => p.cat))];
+  return ['Todos', ...set];
+}
+function pintarCats(){
+  $('cats').innerHTML = categorias().map(c =>
+    `<button class="cat ${c===filtro?'active':''}" data-cat="${c}">${c}</button>`).join('');
+}
+function pintarGrid(){
+  const lista = PRODUCTOS.filter(p => filtro==='Todos' || p.cat===filtro);
+  $('grid').innerHTML = lista.map((p,i) => `
+    <article class="card" data-id="${p.id}" style="animation-delay:${i*40}ms">
+      <div class="tile">${p.emoji}${p.ultimos?'<span class="badge">Últimos</span>':''}</div>
+      <div class="card-body">
+        <div class="marca">${p.marca}</div>
+        <div class="nombre">${p.nombre}</div>
+        <div class="precio">${fmt(p.precio)}</div>
+        <button class="add" data-add="${p.id}">🛒 Agregar</button>
+      </div>
+    </article>`).join('');
+}
+
+/* ============ DETALLE ============ */
+function abrirDetalle(id){
+  const p = PRODUCTOS.find(x => x.id===id); if(!p) return;
+  detActual = p; detQty = 1;
+  $('detTile').textContent = p.emoji;
+  $('detMarca').textContent = p.marca;
+  $('detNombre').textContent = p.nombre;
+  $('detPrecio').textContent = fmt(p.precio);
+  $('detDesc').textContent = p.desc || '';
+  $('qVal').textContent = '1';
+  abrir('ovDet');
+}
+
+/* ============ CARRITO ============ */
+function agregar(id, qty=1){
+  const ex = carrito.find(c => c.id===id);
+  if(ex) ex.qty += qty; else carrito.push({id, qty});
+  actualizarContador();
+  burbuja();
+}
+function quitar(id){ carrito = carrito.filter(c => c.id!==id); pintarCarrito(); actualizarContador(); }
+function cambiarQty(id, d){
+  const c = carrito.find(x => x.id===id); if(!c) return;
+  c.qty += d; if(c.qty<=0) carrito = carrito.filter(x => x.id!==id);
+  pintarCarrito(); actualizarContador();
+}
+function totalCarrito(){
+  return carrito.reduce((s,c)=>{ const p=PRODUCTOS.find(x=>x.id===c.id); return s + (p?p.precio*c.qty:0); },0);
+}
+function actualizarContador(){
+  const n = carrito.reduce((s,c)=>s+c.qty,0);
+  const el = $('cartCount'); el.textContent = n; el.classList.toggle('show', n>0);
+}
+function burbuja(){
+  const b = $('cartBtn'); b.style.transform='scale(1.08)';
+  setTimeout(()=>b.style.transform='',150);
+}
+function pintarCarrito(){
+  if(!carrito.length){
+    $('cartList').innerHTML = `<div class="cart-empty"><span class="em">🛒</span>Tu carrito está vacío.<br>Sumá productos para encargar.</div>`;
+    $('cartFoot').style.display='none'; return;
+  }
+  $('cartList').innerHTML = carrito.map(c=>{
+    const p = PRODUCTOS.find(x=>x.id===c.id); if(!p) return '';
+    return `<div class="citem">
+      <div class="ti">${p.emoji}</div>
+      <div class="info"><div class="n">${p.nombre}</div><div class="p">${fmt(p.precio)} c/u</div></div>
+      <div class="qmini">
+        <button data-menos="${p.id}">−</button><span>${c.qty}</span><button data-mas="${p.id}">+</button>
+        <button data-quitar="${p.id}" title="Quitar" style="margin-left:4px">🗑️</button>
+      </div></div>`;
+  }).join('');
+  $('cartFoot').style.display='block';
+  $('cartTotal').textContent = fmt(totalCarrito());
+}
+
+/* ============ CONFIRMAR (demo) ============ */
+function generarCodigo(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:5},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+function confirmar(){
+  if(!carrito.length) return;
+  $('confCodigo').textContent = generarCodigo();
+  $('confDatos').innerHTML = `<strong>${TIENDA.nombre}</strong><br>📍 ${TIENDA.direccion}<br>📞 ${TIENDA.telefono}<br><br>Total a pagar en el local: <strong>${fmt(totalCarrito())}</strong>`;
+  cerrarTodo();
+  abrir('ovConf');
+  carrito = []; actualizarContador(); pintarCarrito();
+}
+
+/* ============ MODALES ============ */
+function abrir(id){ $(id).classList.add('show'); document.body.style.overflow='hidden'; }
+function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; }
+
+/* ============ EVENTOS ============ */
+document.addEventListener('click', e=>{
+  const cat = e.target.closest('[data-cat]');
+  if(cat){ filtro = cat.dataset.cat; pintarCats(); pintarGrid(); return; }
+
+  const add = e.target.closest('[data-add]');
+  if(add){ e.stopPropagation(); agregar(add.dataset.add,1); return; }
+
+  const card = e.target.closest('.card');
+  if(card){ abrirDetalle(card.dataset.id); return; }
+
+  if(e.target.closest('[data-close]')) { cerrarTodo(); return; }
+  if(e.target.classList.contains('overlay')) { cerrarTodo(); return; }
+
+  const menos=e.target.closest('[data-menos]'); if(menos){ cambiarQty(menos.dataset.menos,-1); return; }
+  const mas=e.target.closest('[data-mas]');     if(mas){ cambiarQty(mas.dataset.mas,1); return; }
+  const quit=e.target.closest('[data-quitar]'); if(quit){ quitar(quit.dataset.quitar); return; }
+
+  const tema=e.target.closest('[data-tema]');
+  if(tema && tema.tagName==='BUTTON'){
+    document.documentElement.dataset.tema = tema.dataset.tema;
+    document.querySelectorAll('.modelos button').forEach(b=>b.classList.toggle('on', b===tema));
+    return;
+  }
+});
+$('cartBtn').addEventListener('click', ()=>{ pintarCarrito(); abrir('ovCart'); });
+$('qMenos').addEventListener('click', ()=>{ if(detQty>1){detQty--; $('qVal').textContent=detQty;} });
+$('qMas').addEventListener('click', ()=>{ detQty++; $('qVal').textContent=detQty; });
+$('detAdd').addEventListener('click', ()=>{ if(detActual){ agregar(detActual.id, detQty); cerrarTodo(); } });
+$('confirmarBtn').addEventListener('click', confirmar);
+
+/* ============ INIT ============ */
+pintarMarca(); pintarCats(); pintarGrid(); actualizarContador();
+</script>
+</body>
+</html>
