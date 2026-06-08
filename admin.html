@@ -286,7 +286,10 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     <input id="promoTit" placeholder="Ej: 2x1 en Remeras">
     <label>Descripción</label>
     <textarea id="promoDesc" rows="2" placeholder="Detalle breve de la promo"></textarea>
-    <label>Color</label>
+    <label>Foto (opcional)</label>
+    <input id="promoFile" type="file" accept="image/*">
+    <button class="btn btn-ghost btn-sm" id="btnQuitarPromoFoto" type="button" style="margin-top:6px;display:none">✕ Quitar foto</button>
+    <label>Color <span style="font-weight:400;color:var(--muted)">(si no subís foto)</span></label>
     <div class="swatches" id="promoSwatches"></div>
     <button class="btn btn-block" id="btnGuardarPromo" style="margin-top:18px">💾 Guardar promo</button>
   </div>
