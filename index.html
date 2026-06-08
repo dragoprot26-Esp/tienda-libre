@@ -340,6 +340,13 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
 .citem .ti img{width:100%;height:100%;object-fit:cover;border-radius:12px}
 .det-extra{font-size:.9rem;color:var(--text-2);margin:3px 0}
 .det-extra b{color:var(--text)}
+.co-pad{padding:20px}
+.co-input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:var(--font-body);font-size:1rem;margin-top:4px;margin-bottom:6px;outline:none}
+.co-input:focus{border-color:var(--accent)}
+.co-lbl{font-weight:600;font-size:.84rem;color:var(--text-2);margin-top:10px;display:block}
+.co-opt{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-top:8px;cursor:pointer;font-weight:500}
+.co-opt input{width:auto;accent-color:var(--accent);transform:scale(1.2)}
+.co-err{color:#e23;font-size:.85rem;margin-top:8px;min-height:1em}
 </style>
 </head>
 <body>
@@ -399,6 +406,28 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
     <div class="cart-foot" id="cartFoot" style="display:none">
       <div class="cart-total"><span>Total del encargo</span><b id="cartTotal">$0</b></div>
       <button class="btn-main" id="confirmarBtn">Confirmar encargo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal checkout -->
+<div class="overlay" id="ovCheckout">
+  <div class="sheet">
+    <div class="co-pad">
+      <button class="x" data-close style="float:right">×</button>
+      <h3 style="font-size:1.4rem;margin-bottom:2px">Finalizar encargo</h3>
+      <p style="color:var(--text-2);font-size:.9rem;margin-bottom:12px">Reservás y <b>pagás al retirar</b> en el local.</p>
+      <div id="coResumen" style="font-size:.9rem;color:var(--text-2);background:var(--surface-2);border-radius:12px;padding:12px;margin-bottom:8px"></div>
+      <label class="co-lbl">Tu nombre</label>
+      <input id="coNombre" class="co-input" placeholder="Nombre y apellido">
+      <label class="co-lbl">Tu teléfono</label>
+      <input id="coTel" class="co-input" type="tel" inputmode="tel" placeholder="Ej: 221 555 1234">
+      <label class="co-lbl">¿Cómo querés recibir tu código?</label>
+      <label class="co-opt"><input type="radio" name="via" value="whatsapp" checked> 🟢 Por WhatsApp</label>
+      <label class="co-opt"><input type="radio" name="via" value="email"> ✉️ Por mail</label>
+      <input id="coEmail" class="co-input" type="email" inputmode="email" placeholder="tucorreo@ejemplo.com" style="display:none;margin-top:8px">
+      <div class="co-err" id="coErr"></div>
+      <button class="btn-main" id="coConfirmar" style="margin-top:8px">Confirmar encargo →</button>
     </div>
   </div>
 </div>
@@ -470,6 +499,13 @@ const fmt = n => '$' + Number(n).toLocaleString('es-AR');
 const SB_URL = 'https://pcxlhgdpxfuybzfsquem.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjeGxoZ2RweGZ1eWJ6ZnNxdWVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDIyOTQsImV4cCI6MjA5NjE3ODI5NH0.HJWpFO8TkRsmUx15GtSsUusjvVEhUsi5b_QGoPoPU00';
 
+/* EmailJS (para enviar el código por mail) */
+const EMAILJS_SERVICE = 'service_yyq7g8j';
+const EMAILJS_TEMPLATE = 'template_retiro';   // crear este template en EmailJS
+const EMAILJS_PUBLIC = 'jhKfIcmjuvOrBXfp5';
+
+let TENANT = null;   // código del local (cuando la tienda es real)
+
 function esImg(s){ return typeof s === 'string' && s.indexOf('data:') === 0; }
 function media(p){ return esImg(p && p.imagen) ? `<img src="${p.imagen}" alt="">` : (p && p.emoji ? p.emoji : '🛍️'); }
 function logoHTML(l){ return esImg(l) ? `<img src="${l}" alt="">` : (l || '🛍️'); }
@@ -478,6 +514,7 @@ function logoHTML(l){ return esImg(l) ? `<img src="${l}" alt="">` : (l || '🛍�
 async function cargarTienda(){
   const codigo = new URLSearchParams(location.search).get('tienda');
   if(!codigo) return;                                   // sin código → modo muestra
+  TENANT = codigo;
   document.querySelector('.modelos')?.remove();          // ocultar selector en tienda real
   try{
     const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
@@ -590,18 +627,95 @@ function pintarCarrito(){
   $('cartTotal').textContent = fmt(totalCarrito());
 }
 
-/* ============ CONFIRMAR (demo) ============ */
+/* ============ CHECKOUT (encargo con código de retiro) ============ */
 function generarCodigo(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:5},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
 }
-function confirmar(){
+
+function abrirCheckout(){
   if(!carrito.length) return;
-  $('confCodigo').textContent = generarCodigo();
-  $('confDatos').innerHTML = `<strong>${TIENDA.nombre}</strong><br>📍 ${TIENDA.direccion}<br>📞 ${TIENDA.telefono}<br><br>Total a pagar en el local: <strong>${fmt(totalCarrito())}</strong>`;
-  cerrarTodo();
-  abrir('ovConf');
-  carrito = []; actualizarContador(); pintarCarrito();
+  const resumen = carrito.map(c=>{ const p=PRODUCTOS.find(x=>x.id===c.id); return p?`${c.qty}× ${p.nombre}`:''; }).filter(Boolean).join('<br>');
+  $('coResumen').innerHTML = resumen + `<br><strong style="color:var(--text)">Total: ${fmt(totalCarrito())}</strong>`;
+  $('coErr').textContent='';
+  cerrarTodo(); abrir('ovCheckout');
+}
+
+async function confirmarEncargo(){
+  if(!carrito.length) return;
+  const nombre = $('coNombre').value.trim();
+  const tel = $('coTel').value.trim();
+  const via = (document.querySelector('input[name=via]:checked')||{}).value || 'whatsapp';
+  const email = $('coEmail').value.trim();
+  const err = $('coErr');
+  if(!nombre || !tel){ err.textContent='Completá tu nombre y teléfono.'; return; }
+  if(via==='email' && !email){ err.textContent='Escribí tu mail para enviarte el código.'; return; }
+  err.textContent='';
+
+  const codigo = generarCodigo();
+  const items = carrito.map(c=>{ const p=PRODUCTOS.find(x=>x.id===c.id); return {id:c.id, nombre:p?p.nombre:'', precio:p?p.precio:0, cantidad:c.qty}; });
+  const total = totalCarrito();
+  const detalle = items.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ');
+  const venta = { id:'v'+Date.now().toString(36), codigo, fecha:Date.now(),
+    cliente:{ nombre, telefono:tel, email: via==='email'?email:'', via }, items, total, estado:'pendiente' };
+
+  if(TENANT) guardarVentaEnNube(venta);          // queda en el panel del local
+  if(via==='whatsapp') enviarWhatsApp(codigo, detalle, total);
+  else enviarEmail(venta, detalle);
+
+  mostrarConfirmacion(codigo, total, via);
+  carrito=[]; actualizarContador(); pintarCarrito();
+}
+
+function enviarWhatsApp(codigo, detalle, total){
+  const tel = (TIENDA.telefono||'').replace(/\D/g,'');
+  const msg = `Hola! Hice un encargo en ${TIENDA.nombre}.\n\n🎟️ Código de retiro: ${codigo}\n🛍️ Pedido: ${detalle}\n💰 Total: ${fmt(total)} (pago al retirar)\n\n¿Me avisan cuando esté listo? ¡Gracias!`;
+  if(tel) window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+async function enviarEmail(venta, detalle){
+  try{
+    await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        service_id: EMAILJS_SERVICE, template_id: EMAILJS_TEMPLATE, user_id: EMAILJS_PUBLIC,
+        template_params: {
+          to_email: venta.cliente.email, to_name: venta.cliente.nombre,
+          codigo: venta.codigo, detalle, total: fmt(venta.total),
+          local_nombre: TIENDA.nombre, local_direccion: TIENDA.direccion, local_telefono: TIENDA.telefono
+        }
+      })
+    });
+  }catch(e){ console.warn('email:', e); }
+}
+
+async function guardarVentaEnNube(venta){
+  if(!TENANT) return;
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(TENANT)}&select=datos&limit=1`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+    let datos = {};
+    if(res.ok){ const rows = await res.json(); if(rows && rows.length && rows[0].datos) datos = rows[0].datos; }
+    let ventas = [];
+    try{ ventas = JSON.parse(datos.ventas || '[]'); }catch(e){ ventas = []; }
+    ventas.push(venta);
+    datos.ventas = JSON.stringify(ventas);
+    await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+      method:'POST',
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+      body: JSON.stringify({ tenant_id:TENANT, datos, updated_at:new Date().toISOString() })
+    });
+  }catch(e){ console.warn('guardar venta:', e); }
+}
+
+function mostrarConfirmacion(codigo, total, via){
+  $('confCodigo').textContent = codigo;
+  $('confDatos').innerHTML = `<strong>${TIENDA.nombre}</strong><br>📍 ${TIENDA.direccion||''}<br>📞 ${TIENDA.telefono||''}<br><br>Total a pagar al retirar: <strong>${fmt(total)}</strong>`;
+  const nota = document.querySelector('#ovConf .nota');
+  if(nota) nota.textContent = (via==='whatsapp')
+    ? 'Te abrimos WhatsApp para enviar tu código. Guardalo: lo presentás en el local para retirar y pagar.'
+    : 'Te enviamos el código a tu mail. Guardalo: lo presentás en el local para retirar y pagar.';
+  cerrarTodo(); abrir('ovConf');
 }
 
 /* ============ MODALES ============ */
@@ -637,7 +751,12 @@ $('cartBtn').addEventListener('click', ()=>{ pintarCarrito(); abrir('ovCart'); }
 $('qMenos').addEventListener('click', ()=>{ if(detQty>1){detQty--; $('qVal').textContent=detQty;} });
 $('qMas').addEventListener('click', ()=>{ detQty++; $('qVal').textContent=detQty; });
 $('detAdd').addEventListener('click', ()=>{ if(detActual){ agregar(detActual.id, detQty); cerrarTodo(); } });
-$('confirmarBtn').addEventListener('click', confirmar);
+$('confirmarBtn').addEventListener('click', abrirCheckout);
+$('coConfirmar').addEventListener('click', confirmarEncargo);
+document.querySelectorAll('input[name=via]').forEach(r => r.addEventListener('change', ()=>{
+  const via = (document.querySelector('input[name=via]:checked')||{}).value;
+  $('coEmail').style.display = (via==='email') ? 'block' : 'none';
+}));
 
 /* ============ INIT ============ */
 (async function init(){
