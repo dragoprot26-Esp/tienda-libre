@@ -58,6 +58,7 @@ async function mostrarPanel(){
   pintarConfig();
   pintarModelos();
   pintarProductos();
+  iniciarVentas();
   // Bienvenida
   const b = sessionStorage.getItem('tl_bienvenida');
   if (b) { sessionStorage.removeItem('tl_bienvenida'); setTimeout(()=>toast('🎉 ¡Bienvenido/a! Cargá tus productos y elegí tu modelo.'), 400); }
@@ -192,6 +193,109 @@ function guardarConfig(){
   toast('💾 Configuración guardada');
 }
 
+/* ===================== VENTAS ===================== */
+let ventasCache = [];
+let _ventasIds = null;     // Set de ids conocidos (null = primera carga, no avisar)
+let _ventasTimer = null;
+
+function fmtFechaCorta(ts){
+  try{ const d=new Date(ts);
+    return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+
+async function refrescarVentasNube(){
+  const codigo = _tlCodigo();
+  if (!codigo) return;
+  try{
+    const res = await fetch(
+      `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+    if (!res.ok) return;
+    const rows = await res.json();
+    let ventas = [];
+    if (rows && rows.length && rows[0].datos){
+      try{ ventas = JSON.parse(rows[0].datos.ventas || '[]'); }catch(e){ ventas = []; }
+    }
+    ventas.sort((a,b)=>(b.fecha||0)-(a.fecha||0));
+    const ids = new Set(ventas.map(v=>v.id));
+    if (_ventasIds !== null){
+      const nuevas = ventas.filter(v=>!_ventasIds.has(v.id));
+      if (nuevas.length){
+        toast('🔔 ¡Nuevo encargo! Código '+nuevas[0].codigo);
+        $('tabVentas').classList.add('has-new');
+      }
+    }
+    _ventasIds = ids;
+    ventasCache = ventas;
+    pintarVentas();
+    actualizarBadgeVentas();
+  }catch(e){ console.warn('ventas:', e); }
+}
+
+function actualizarBadgeVentas(){
+  const pend = ventasCache.filter(v=>(v.estado||'pendiente')==='pendiente').length;
+  const b = $('ventasBadge');
+  if (pend>0){ b.textContent=pend; b.style.display='inline-grid'; }
+  else b.style.display='none';
+}
+
+function pintarVentas(){
+  const cont = $('listaVentas');
+  if (!ventasCache.length){
+    cont.innerHTML = `<div class="empty"><span class="e">🛍️</span>Todavía no hay encargos.<br>Cuando un cliente confirme uno, aparece acá.</div>`;
+    return;
+  }
+  const lbl = {pendiente:'⏳ Pendiente', listo:'✅ Listo para retirar', entregado:'📦 Entregado'};
+  cont.innerHTML = ventasCache.map(v=>{
+    const est = v.estado || 'pendiente';
+    const items = (v.items||[]).map(i=>`${i.cantidad}× ${escHtml(i.nombre)}`).join(' · ');
+    const tel = (v.cliente && v.cliente.telefono) || '';
+    const telLink = tel ? `<a href="https://wa.me/${tel.replace(/\D/g,'')}" target="_blank">📞 ${escHtml(tel)}</a>` : '';
+    const via = (v.cliente && v.cliente.via==='email') ? `✉️ ${escHtml(v.cliente.email||'')}` : '🟢 WhatsApp';
+    let acc = '';
+    if (est!=='listo')     acc += `<button class="btn btn-soft btn-sm" data-vest="${v.id}|listo">✅ Listo</button>`;
+    if (est!=='entregado') acc += `<button class="btn btn-sm" data-vest="${v.id}|entregado">📦 Entregado</button>`;
+    if (est!=='pendiente') acc += `<button class="btn btn-ghost btn-sm" data-vest="${v.id}|pendiente">↩️ Reabrir</button>`;
+    return `<div class="venta-card e-${est}">
+      <div class="vc-top"><span class="vc-cod">${escHtml(v.codigo)}</span><span class="vc-est ${est}">${lbl[est]||est}</span></div>
+      <div class="vc-cli">👤 <b>${escHtml((v.cliente&&v.cliente.nombre)||'')}</b> · ${telLink} · <span style="color:var(--muted)">${via}</span></div>
+      <div class="vc-items">${items}</div>
+      <div class="vc-foot"><span class="vc-total">Total: <b>${formatPrecio(v.total)}</b></span><span class="vc-fecha">${fmtFechaCorta(v.fecha)}</span></div>
+      <div class="vc-acc">${acc}</div>
+    </div>`;
+  }).join('');
+}
+
+async function cambiarEstadoVenta(id, estado){
+  const codigo = _tlCodigo();
+  if (!codigo) return;
+  ventasCache = ventasCache.map(v=>v.id===id?Object.assign({}, v, {estado}):v);
+  pintarVentas(); actualizarBadgeVentas();
+  try{
+    const res = await fetch(
+      `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+    let datos = {};
+    if (res.ok){ const rows = await res.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
+    let ventas = [];
+    try{ ventas = JSON.parse(datos.ventas || '[]'); }catch(e){ ventas = []; }
+    ventas = ventas.map(v=>v.id===id?Object.assign({}, v, {estado}):v);
+    datos.ventas = JSON.stringify(ventas);
+    await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+      method:'POST',
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+      body: JSON.stringify({ tenant_id:codigo, datos, updated_at:new Date().toISOString() })
+    });
+  }catch(e){ console.warn('estado venta:', e); toast('⚠️ No se pudo guardar el cambio'); }
+}
+
+function iniciarVentas(){
+  refrescarVentasNube();
+  if (_ventasTimer) clearInterval(_ventasTimer);
+  _ventasTimer = setInterval(refrescarVentasNube, 20000);
+}
+
 /* ===================== MODALES ===================== */
 function abrir(id){ $(id).classList.add('show'); document.body.style.overflow='hidden'; }
 function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; }
@@ -239,13 +343,17 @@ $('cLogoEmoji').addEventListener('input', e=>{ logoImg=''; const v=e.target.valu
 
 $('btnVista').addEventListener('click', ()=>window.open(getLinkTienda(), '_blank'));
 $('btnSalir').addEventListener('click', logoutAdmin);
+$('btnRefVentas').addEventListener('click', refrescarVentasNube);
 
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
   if (e.target.classList.contains('overlay')) { cerrarTodo(); return; }
   const tab=e.target.closest('.tab');
   if (tab){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); tab.classList.add('on');
-    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on')); $(tab.dataset.sec).classList.add('on'); return; }
+    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on')); $(tab.dataset.sec).classList.add('on');
+    if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
+    return; }
+  const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
   const ed=e.target.closest('[data-edit]'); if(ed){ abrirProd(ed.dataset.edit); return; }
   const dl=e.target.closest('[data-del]');  if(dl){ eliminarProd(dl.dataset.del); return; }
   const rm=e.target.closest('[data-rmextra]'); if(rm){ rm.closest('.extra-row').remove(); return; }
