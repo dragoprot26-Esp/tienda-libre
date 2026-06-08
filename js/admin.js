@@ -202,6 +202,7 @@ const PROMO_COLORS = [
 ];
 let promoEdit = null;
 let promoColor = PROMO_COLORS[0];
+let promoImg = '';
 
 function getPromos(){ try{ return JSON.parse(localStorage.getItem('promos')||'[]'); }catch(e){ return []; } }
 function setPromos(arr){ localStorage.setItem('promos', JSON.stringify(arr)); }
@@ -212,7 +213,7 @@ function pintarPromosPanel(){
   if(!proms.length){ cont.innerHTML = `<div class="empty"><span class="e">🔥</span>Todavía no creaste promos.<br>Tocá "+ Agregar promo".</div>`; return; }
   cont.innerHTML = proms.map(p=>`
     <div class="promo-li">
-      <div class="sw" style="background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})">${escHtml(p.emoji||'🔥')}</div>
+      <div class="sw" style="${esImg(p.imagen)?`background-image:url('${p.imagen}');background-size:cover;background-position:center`:`background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})`}">${esImg(p.imagen)?'':escHtml(p.emoji||'🔥')}</div>
       <div class="pi">
         <div class="t">${escHtml(p.titulo||'')}</div>
         <div class="d">${escHtml(p.desc||'')}</div>
@@ -235,8 +236,14 @@ function renderPromoPreview(){
   const tit=$('promoTit').value.trim()||'Título de la promo';
   const desc=$('promoDesc').value.trim();
   const pv=$('promoPrev');
-  pv.style.background=`linear-gradient(135deg,${promoColor})`;
-  pv.innerHTML = `<span class="pe">${escHtml(emoji)}</span>${etq?`<span class="pq">${escHtml(etq)}</span>`:''}<div class="pt">${escHtml(tit)}</div>${desc?`<div class="pd">${escHtml(desc)}</div>`:''}`;
+  if(esImg(promoImg)){
+    pv.style.backgroundImage=`linear-gradient(to top,rgba(0,0,0,.6),rgba(0,0,0,.05)),url('${promoImg}')`;
+    pv.style.backgroundSize='cover'; pv.style.backgroundPosition='center';
+  } else {
+    pv.style.backgroundImage=`linear-gradient(135deg,${promoColor})`;
+  }
+  pv.innerHTML = `${esImg(promoImg)?'':`<span class="pe">${escHtml(emoji)}</span>`}${etq?`<span class="pq">${escHtml(etq)}</span>`:''}<div class="pt">${escHtml(tit)}</div>${desc?`<div class="pd">${escHtml(desc)}</div>`:''}`;
+  $('btnQuitarPromoFoto').style.display = esImg(promoImg)?'inline-flex':'none';
 }
 function abrirPromo(id){
   promoEdit = id || null;
@@ -247,6 +254,8 @@ function abrirPromo(id){
   $('promoTit').value   = p ? (p.titulo||'') : '';
   $('promoDesc').value  = p ? (p.desc||'') : '';
   promoColor = (p && p.g) ? p.g : PROMO_COLORS[0];
+  promoImg = p ? (p.imagen||'') : '';
+  $('promoFile').value = '';
   renderSwatches(); renderPromoPreview();
   abrir('ovPromo');
 }
@@ -257,7 +266,7 @@ function guardarPromo(){
     id: promoEdit || ('pr'+Date.now().toString(36)),
     emoji: $('promoEmoji').value.trim()||'🔥',
     etiqueta: $('promoEtq').value.trim(),
-    titulo, desc: $('promoDesc').value.trim(), g: promoColor
+    titulo, desc: $('promoDesc').value.trim(), g: promoColor, imagen: promoImg||''
   };
   let proms = getPromos();
   if(promoEdit) proms = proms.map(p=>p.id===promoEdit?promo:p);
@@ -427,6 +436,11 @@ $('btnRefVentas').addEventListener('click', refrescarVentasNube);
 $('btnAddPromo').addEventListener('click', ()=>abrirPromo(null));
 $('btnGuardarPromo').addEventListener('click', guardarPromo);
 ['promoEmoji','promoEtq','promoTit','promoDesc'].forEach(id=>$(id).addEventListener('input', renderPromoPreview));
+$('promoFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  comprimirImagen(f, 700, b64=>{ promoImg=b64; renderPromoPreview(); });
+});
+$('btnQuitarPromoFoto').addEventListener('click', ()=>{ promoImg=''; $('promoFile').value=''; renderPromoPreview(); });
 
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
