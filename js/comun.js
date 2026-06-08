@@ -65,8 +65,8 @@ async function tlNubeCargar() {
   if (!codigo) return { hydrated: false, changed: false };
   try {
     const res = await fetch(
-      `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1&_ts=${Date.now()}`,
-      { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Cache-Control': 'no-cache' } }
+      `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+      { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
     );
     let rows = [];
     if (res.ok) rows = await res.json();
