@@ -54,8 +54,9 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 .chip.v{background:#e7f8ee;color:var(--ok)} .chip.a{background:#fef3e2;color:var(--warn)} .chip.r{background:#fde8e8;color:var(--bad)}
 .iconbtn{border:1px solid var(--border);background:var(--surface);border-radius:10px;width:40px;height:40px;font-size:1.1rem;flex:0 0 auto}
 
-.tabs{display:flex;gap:8px;padding:14px clamp(14px,3vw,28px) 0;max-width:920px;margin:0 auto;width:100%}
-.tab{flex:1;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:12px;font-weight:600;color:var(--ink-2)}
+.tabs{display:flex;gap:8px;padding:14px clamp(14px,3vw,28px) 0;max-width:920px;margin:0 auto;width:100%;overflow-x:auto}
+.tabs::-webkit-scrollbar{height:0}
+.tab{flex:1 0 auto;white-space:nowrap;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:11px 14px;font-weight:600;font-size:.9rem;color:var(--ink-2)}
 .tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .wrap{max-width:920px;margin:0 auto;padding:18px clamp(14px,3vw,28px) 60px;width:100%}
 .sec{display:none} .sec.on{display:block}
@@ -125,6 +126,22 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 .vc-total b{font-family:'Fraunces';color:var(--ink)}
 .vc-fecha{font-size:.76rem;color:var(--muted)}
 .vc-acc{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* ===== PROMOS (panel) ===== */
+.promo-preview{border-radius:16px;padding:16px;color:#fff;min-height:96px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;margin:8px 0 4px;background:linear-gradient(135deg,#7a5bf0,#5b8bf0)}
+.promo-preview .pe{position:absolute;top:10px;right:14px;font-size:2.1rem}
+.promo-preview .pq{align-self:flex-start;background:rgba(255,255,255,.28);font-weight:800;font-size:.78rem;padding:3px 10px;border-radius:999px;margin-bottom:6px}
+.promo-preview .pt{font-weight:800;font-size:1.06rem}
+.promo-preview .pd{font-size:.8rem;opacity:.92}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.swatch{width:42px;height:42px;border-radius:10px;cursor:pointer;border:3px solid transparent}
+.swatch.on{border-color:var(--ink)}
+.promo-li{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:10px}
+.promo-li .sw{width:56px;height:56px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;font-size:1.7rem;color:#fff}
+.promo-li .pi{flex:1;min-width:0}
+.promo-li .pi .t{font-weight:700}
+.promo-li .pi .d{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.promo-li .pi .q{display:inline-block;font-size:.68rem;background:var(--pri-soft);color:var(--pri);padding:2px 8px;border-radius:999px;font-weight:700;margin-top:3px}
 </style>
 </head>
 <body>
@@ -158,6 +175,7 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   <div class="tabs">
     <button class="tab on" data-sec="secProductos">📦 Productos</button>
     <button class="tab" data-sec="secVentas" id="tabVentas">🔔 Ventas<span class="badge-n" id="ventasBadge" style="display:none">0</span></button>
+    <button class="tab" data-sec="secPromos">🔥 Promos</button>
     <button class="tab" data-sec="secConfig">⚙️ Ajustes</button>
   </div>
 
@@ -176,6 +194,13 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
       </div>
       <p class="hint" style="margin-bottom:10px">Se actualiza solo cada pocos segundos. Marcá cada encargo cuando esté listo o entregado.</p>
       <div id="listaVentas"></div>
+    </section>
+
+    <!-- PROMOS -->
+    <section id="secPromos" class="sec">
+      <button class="btn btn-block" id="btnAddPromo">+ Agregar promo</button>
+      <p class="hint">Las promos aparecen en una franja destacada arriba de tu tienda. 🔥</p>
+      <div id="listaPromos" style="margin-top:14px"></div>
     </section>
 
     <!-- CONFIG -->
@@ -247,8 +272,27 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ===== MODAL PROMO ===== -->
+<div class="overlay" id="ovPromo">
+  <div class="sheet">
+    <button class="close" data-close>×</button>
+    <h3 id="promoModalTit">Nueva promo</h3>
+    <div class="promo-preview" id="promoPrev"></div>
+    <div class="row2">
+      <div><label>Emoji</label><input id="promoEmoji" maxlength="3" placeholder="🔥"></div>
+      <div><label>Etiqueta (chica)</label><input id="promoEtq" maxlength="12" placeholder="2x1 / -25%"></div>
+    </div>
+    <label>Título</label>
+    <input id="promoTit" placeholder="Ej: 2x1 en Remeras">
+    <label>Descripción</label>
+    <textarea id="promoDesc" rows="2" placeholder="Detalle breve de la promo"></textarea>
+    <label>Color</label>
+    <div class="swatches" id="promoSwatches"></div>
+    <button class="btn btn-block" id="btnGuardarPromo" style="margin-top:18px">💾 Guardar promo</button>
+  </div>
+</div>
 
+<div class="toast" id="toast"></div>
 <script src="js/comun.js"></script>
 <script src="js/licencia.js"></script>
 <script src="js/admin.js"></script>
