@@ -43,12 +43,21 @@ async function tlNubeGuardar() {
   if (!_tlPush) return;
   const codigo = _tlCodigo();
   if (!codigo) return;
-  const datos = {};
-  TL_SYNC_KEYS.forEach(k => {
-    const v = localStorage.getItem(k);
-    if (v !== null) datos[k] = v;
-  });
   try {
+    // Leemos lo que ya hay en la nube para NO pisar las ventas de los clientes
+    let datos = {};
+    try {
+      const r = await fetch(
+        `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+        { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
+      );
+      if (r.ok) { const rows = await r.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
+    } catch (e) {}
+    // Sobreescribimos solo las claves del panel (productos, config). 'ventas' queda intacto.
+    TL_SYNC_KEYS.forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v !== null) datos[k] = v;
+    });
     await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method: 'POST',
       headers: {
