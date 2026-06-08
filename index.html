@@ -480,7 +480,7 @@ async function cargarTienda(){
   if(!codigo) return;                                   // sin código → modo muestra
   document.querySelector('.modelos')?.remove();          // ocultar selector en tienda real
   try{
-    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1&_ts=${Date.now()}`,
+    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
       { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
     const rows = await res.json();
     if(rows && rows.length && rows[0].datos){
