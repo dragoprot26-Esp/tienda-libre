@@ -58,6 +58,7 @@ async function mostrarPanel(){
   pintarConfig();
   pintarModelos();
   pintarProductos();
+  pintarPromosPanel();
   iniciarVentas();
   // Bienvenida
   const b = sessionStorage.getItem('tl_bienvenida');
@@ -191,6 +192,85 @@ function guardarConfig(){
   setCfg('tema', temaSel);
   pintarBarra();
   toast('💾 Configuración guardada');
+}
+
+/* ===================== PROMOS (panel) ===================== */
+const PROMO_COLORS = [
+  '#ff7a59,#ff3d77','#7a5bf0,#5b8bf0','#0ea5e9,#16a34a','#f59e0b,#ef4444',
+  '#14b8a6,#0ea5e9','#22c55e,#16a34a','#6366f1,#a855f7','#fb923c,#f43f5e',
+  '#ec4899,#8b5cf6','#0891b2,#2563eb','#1f2937,#4b5563'
+];
+let promoEdit = null;
+let promoColor = PROMO_COLORS[0];
+
+function getPromos(){ try{ return JSON.parse(localStorage.getItem('promos')||'[]'); }catch(e){ return []; } }
+function setPromos(arr){ localStorage.setItem('promos', JSON.stringify(arr)); }
+
+function pintarPromosPanel(){
+  const proms = getPromos();
+  const cont = $('listaPromos');
+  if(!proms.length){ cont.innerHTML = `<div class="empty"><span class="e">🔥</span>Todavía no creaste promos.<br>Tocá "+ Agregar promo".</div>`; return; }
+  cont.innerHTML = proms.map(p=>`
+    <div class="promo-li">
+      <div class="sw" style="background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})">${escHtml(p.emoji||'🔥')}</div>
+      <div class="pi">
+        <div class="t">${escHtml(p.titulo||'')}</div>
+        <div class="d">${escHtml(p.desc||'')}</div>
+        ${p.etiqueta?`<span class="q">${escHtml(p.etiqueta)}</span>`:''}
+      </div>
+      <div class="prod-actions">
+        <button class="btn btn-ghost btn-sm" data-editpromo="${p.id}">✏️</button>
+        <button class="btn btn-bad btn-sm" data-delpromo="${p.id}">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderSwatches(){
+  $('promoSwatches').innerHTML = PROMO_COLORS.map(c=>
+    `<div class="swatch ${c===promoColor?'on':''}" data-swatch="${c}" style="background:linear-gradient(135deg,${c})"></div>`).join('');
+}
+function renderPromoPreview(){
+  const emoji=$('promoEmoji').value.trim()||'🔥';
+  const etq=$('promoEtq').value.trim();
+  const tit=$('promoTit').value.trim()||'Título de la promo';
+  const desc=$('promoDesc').value.trim();
+  const pv=$('promoPrev');
+  pv.style.background=`linear-gradient(135deg,${promoColor})`;
+  pv.innerHTML = `<span class="pe">${escHtml(emoji)}</span>${etq?`<span class="pq">${escHtml(etq)}</span>`:''}<div class="pt">${escHtml(tit)}</div>${desc?`<div class="pd">${escHtml(desc)}</div>`:''}`;
+}
+function abrirPromo(id){
+  promoEdit = id || null;
+  const p = id ? getPromos().find(x=>x.id===id) : null;
+  $('promoModalTit').textContent = p ? 'Editar promo' : 'Nueva promo';
+  $('promoEmoji').value = p ? (p.emoji||'🔥') : '🔥';
+  $('promoEtq').value   = p ? (p.etiqueta||'') : '';
+  $('promoTit').value   = p ? (p.titulo||'') : '';
+  $('promoDesc').value  = p ? (p.desc||'') : '';
+  promoColor = (p && p.g) ? p.g : PROMO_COLORS[0];
+  renderSwatches(); renderPromoPreview();
+  abrir('ovPromo');
+}
+function guardarPromo(){
+  const titulo = $('promoTit').value.trim();
+  if(!titulo){ toast('⚠️ Poné un título'); return; }
+  const promo = {
+    id: promoEdit || ('pr'+Date.now().toString(36)),
+    emoji: $('promoEmoji').value.trim()||'🔥',
+    etiqueta: $('promoEtq').value.trim(),
+    titulo, desc: $('promoDesc').value.trim(), g: promoColor
+  };
+  let proms = getPromos();
+  if(promoEdit) proms = proms.map(p=>p.id===promoEdit?promo:p);
+  else proms.unshift(promo);
+  setPromos(proms);
+  cerrarTodo(); pintarPromosPanel();
+  toast(promoEdit?'✅ Promo actualizada':'✅ Promo agregada');
+}
+function eliminarPromo(id){
+  if(!confirm('¿Eliminar esta promo?')) return;
+  setPromos(getPromos().filter(p=>p.id!==id));
+  pintarPromosPanel();
+  toast('Promo eliminada');
 }
 
 /* ===================== VENTAS ===================== */
@@ -344,6 +424,9 @@ $('cLogoEmoji').addEventListener('input', e=>{ logoImg=''; const v=e.target.valu
 $('btnVista').addEventListener('click', ()=>window.open(getLinkTienda(), '_blank'));
 $('btnSalir').addEventListener('click', logoutAdmin);
 $('btnRefVentas').addEventListener('click', refrescarVentasNube);
+$('btnAddPromo').addEventListener('click', ()=>abrirPromo(null));
+$('btnGuardarPromo').addEventListener('click', guardarPromo);
+['promoEmoji','promoEtq','promoTit','promoDesc'].forEach(id=>$(id).addEventListener('input', renderPromoPreview));
 
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
@@ -354,6 +437,9 @@ document.addEventListener('click', e=>{
     if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
     return; }
   const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
+  const epr=e.target.closest('[data-editpromo]'); if(epr){ abrirPromo(epr.dataset.editpromo); return; }
+  const dpr=e.target.closest('[data-delpromo]'); if(dpr){ eliminarPromo(dpr.dataset.delpromo); return; }
+  const sw=e.target.closest('[data-swatch]'); if(sw){ promoColor=sw.dataset.swatch; renderSwatches(); renderPromoPreview(); return; }
   const ed=e.target.closest('[data-edit]'); if(ed){ abrirProd(ed.dataset.edit); return; }
   const dl=e.target.closest('[data-del]');  if(dl){ eliminarProd(dl.dataset.del); return; }
   const rm=e.target.closest('[data-rmextra]'); if(rm){ rm.closest('.extra-row').remove(); return; }
