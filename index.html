@@ -619,13 +619,18 @@ function pintarPromos(){
   const sec = $('promosSec');
   if(!PROMOS || !PROMOS.length){ sec.style.display='none'; return; }
   sec.style.display='block';
-  $('promosScroll').innerHTML = PROMOS.map(p=>`
-    <div class="promo-card" style="background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})">
-      <span class="pemoji">${esc(p.emoji||'🔥')}</span>
+  $('promosScroll').innerHTML = PROMOS.map(p=>{
+    const hasImg = esImg(p.imagen);
+    const bg = hasImg
+      ? `background-image:linear-gradient(to top,rgba(0,0,0,.66),rgba(0,0,0,.05)),url('${p.imagen}');background-size:cover;background-position:center`
+      : `background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})`;
+    return `<div class="promo-card" style="${bg}">
+      ${hasImg?'':`<span class="pemoji">${esc(p.emoji||'🔥')}</span>`}
       ${p.etiqueta?`<span class="petq">${esc(p.etiqueta)}</span>`:''}
       <div class="ptit">${esc(p.titulo||'')}</div>
       ${p.desc?`<div class="pdesc">${esc(p.desc)}</div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ============ DETALLE ============ */
