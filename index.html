@@ -336,6 +336,10 @@ header{
 .modelos button.on{background:var(--accent);color:var(--on-accent)}
 
 footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 28px;opacity:.8}
+.logo img{width:100%;height:100%;object-fit:cover}
+.citem .ti img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.det-extra{font-size:.9rem;color:var(--text-2);margin:3px 0}
+.det-extra b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -377,6 +381,7 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
       <h3 id="detNombre">Producto</h3>
       <div class="precio" id="detPrecio">$0</div>
       <p class="desc" id="detDesc"></p>
+      <div id="detExtra"></div>
       <div class="qty">
         <button id="qMenos">−</button><span id="qVal">1</span><button id="qMas">+</button>
       </div>
@@ -437,7 +442,7 @@ const TIENDA = {
   direccion: "Av. Siempreviva 742, La Plata",
   telefono: "221 555 1234"
 };
-const PRODUCTOS = [
+let PRODUCTOS = [
   {id:'p1', cat:'Buzos',     nombre:'Buzo Oversize Crema',   marca:'Urban Co.',  precio:24999, emoji:'🧥', ultimos:true,  desc:'Buzo amplio de algodón frisado, súper abrigado y con caída moderna. Unisex.'},
   {id:'p2', cat:'Buzos',     nombre:'Buzo Capucha Negro',    marca:'Urban Co.',  precio:22999, emoji:'🧥', desc:'Clásico con capucha y bolsillo canguro. El que nunca falla.'},
   {id:'p3', cat:'Remeras',   nombre:'Remera Algodón Blanca', marca:'Basics',     precio:8999,  emoji:'👕', desc:'100% algodón peinado, cuello reforzado. Básico esencial.'},
@@ -461,16 +466,48 @@ let detQty = 1;
 const $ = id => document.getElementById(id);
 const fmt = n => '$' + Number(n).toLocaleString('es-AR');
 
+/* ============ NUBE (Supabase) ============ */
+const SB_URL = 'https://pcxlhgdpxfuybzfsquem.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjeGxoZ2RweGZ1eWJ6ZnNxdWVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDIyOTQsImV4cCI6MjA5NjE3ODI5NH0.HJWpFO8TkRsmUx15GtSsUusjvVEhUsi5b_QGoPoPU00';
+
+function esImg(s){ return typeof s === 'string' && s.indexOf('data:') === 0; }
+function media(p){ return esImg(p && p.imagen) ? `<img src="${p.imagen}" alt="">` : (p && p.emoji ? p.emoji : '🛍️'); }
+function logoHTML(l){ return esImg(l) ? `<img src="${l}" alt="">` : (l || '🛍️'); }
+
+// Si la URL trae ?tienda=CODIGO, traemos esa tienda de la nube (productos reales + modelo)
+async function cargarTienda(){
+  const codigo = new URLSearchParams(location.search).get('tienda');
+  if(!codigo) return;                                   // sin código → modo muestra
+  document.querySelector('.modelos')?.remove();          // ocultar selector en tienda real
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1&_ts=${Date.now()}`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+    const rows = await res.json();
+    if(rows && rows.length && rows[0].datos){
+      const d = rows[0].datos;
+      TIENDA.nombre    = d.nombre_local || 'Tienda';
+      TIENDA.tagline   = d.tagline || '';
+      TIENDA.logo      = d.logo || '🛍️';
+      TIENDA.direccion = d.direccion || '';
+      TIENDA.telefono  = d.telefono || '';
+      if(d.tema) document.documentElement.dataset.tema = d.tema;
+      try{ PRODUCTOS = JSON.parse(d.productos || '[]'); }catch(e){ PRODUCTOS = []; }
+    } else {
+      PRODUCTOS = []; TIENDA.nombre = 'Tienda'; TIENDA.tagline = '';
+    }
+  }catch(e){ console.warn('No se pudo cargar la tienda:', e); }
+}
+
 /* ============ RENDER ============ */
 function pintarMarca(){
   $('hNombre').textContent = TIENDA.nombre;
-  $('hTag').textContent = TIENDA.tagline;
-  $('hLogo').textContent = TIENDA.logo;
-  $('hDir').textContent = '📍 ' + TIENDA.direccion;
-  $('hTel').textContent = '📞 ' + TIENDA.telefono;
+  $('hTag').textContent = TIENDA.tagline || '';
+  $('hLogo').innerHTML = logoHTML(TIENDA.logo);
+  if(TIENDA.direccion){ $('hDir').textContent = '📍 ' + TIENDA.direccion; $('hDir').style.display=''; } else $('hDir').style.display='none';
+  if(TIENDA.telefono){ $('hTel').textContent = '📞 ' + TIENDA.telefono; $('hTel').style.display=''; } else $('hTel').style.display='none';
 }
 function categorias(){
-  const set = [...new Set(PRODUCTOS.map(p => p.cat))];
+  const set = [...new Set(PRODUCTOS.map(p => (p.cat||'').trim()).filter(Boolean))];
   return ['Todos', ...set];
 }
 function pintarCats(){
@@ -479,11 +516,15 @@ function pintarCats(){
 }
 function pintarGrid(){
   const lista = PRODUCTOS.filter(p => filtro==='Todos' || p.cat===filtro);
+  if(!lista.length){
+    $('grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px">Pronto vas a ver los productos acá. 🛍️</div>`;
+    return;
+  }
   $('grid').innerHTML = lista.map((p,i) => `
     <article class="card" data-id="${p.id}" style="animation-delay:${i*40}ms">
-      <div class="tile">${p.emoji}${p.ultimos?'<span class="badge">Últimos</span>':''}</div>
+      <div class="tile">${media(p)}${p.ultimos?'<span class="badge">Últimos</span>':''}</div>
       <div class="card-body">
-        <div class="marca">${p.marca}</div>
+        ${p.marca?`<div class="marca">${p.marca}</div>`:''}
         <div class="nombre">${p.nombre}</div>
         <div class="precio">${fmt(p.precio)}</div>
         <button class="add" data-add="${p.id}">🛒 Agregar</button>
@@ -495,11 +536,13 @@ function pintarGrid(){
 function abrirDetalle(id){
   const p = PRODUCTOS.find(x => x.id===id); if(!p) return;
   detActual = p; detQty = 1;
-  $('detTile').textContent = p.emoji;
-  $('detMarca').textContent = p.marca;
+  $('detTile').innerHTML = media(p);
+  $('detMarca').textContent = p.marca || '';
   $('detNombre').textContent = p.nombre;
   $('detPrecio').textContent = fmt(p.precio);
   $('detDesc').textContent = p.desc || '';
+  const ex = (p.extra || []).filter(e => e.label || e.valor);
+  $('detExtra').innerHTML = ex.map(e => `<div class="det-extra"><b>${e.label}:</b> ${e.valor}</div>`).join('');
   $('qVal').textContent = '1';
   abrir('ovDet');
 }
@@ -536,7 +579,7 @@ function pintarCarrito(){
   $('cartList').innerHTML = carrito.map(c=>{
     const p = PRODUCTOS.find(x=>x.id===c.id); if(!p) return '';
     return `<div class="citem">
-      <div class="ti">${p.emoji}</div>
+      <div class="ti">${media(p)}</div>
       <div class="info"><div class="n">${p.nombre}</div><div class="p">${fmt(p.precio)} c/u</div></div>
       <div class="qmini">
         <button data-menos="${p.id}">−</button><span>${c.qty}</span><button data-mas="${p.id}">+</button>
@@ -597,7 +640,10 @@ $('detAdd').addEventListener('click', ()=>{ if(detActual){ agregar(detActual.id,
 $('confirmarBtn').addEventListener('click', confirmar);
 
 /* ============ INIT ============ */
-pintarMarca(); pintarCats(); pintarGrid(); actualizarContador();
+(async function init(){
+  await cargarTienda();
+  pintarMarca(); pintarCats(); pintarGrid(); actualizarContador();
+})();
 </script>
 </body>
 </html>
