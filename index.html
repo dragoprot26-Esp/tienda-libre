@@ -347,6 +347,15 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
 .co-opt{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-top:8px;cursor:pointer;font-weight:500}
 .co-opt input{width:auto;accent-color:var(--accent);transform:scale(1.2)}
 .co-err{color:#e23;font-size:.85rem;margin-top:8px;min-height:1em}
+.promos-sec{padding:16px 0 2px}
+.promos-sec h2{font-family:var(--font-display);font-size:1.35rem;padding:0 clamp(14px,4vw,22px);margin-bottom:10px}
+.promos-scroll{display:flex;gap:12px;overflow-x:auto;padding:2px clamp(14px,4vw,22px) 8px;scroll-snap-type:x mandatory}
+.promos-scroll::-webkit-scrollbar{height:0}
+.promo-card{flex:0 0 230px;scroll-snap-align:start;border-radius:18px;padding:16px;color:#fff;position:relative;overflow:hidden;min-height:128px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.promo-card .pemoji{font-size:2.3rem;position:absolute;top:12px;right:14px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.promo-card .petq{align-self:flex-start;background:rgba(255,255,255,.28);font-weight:800;font-size:.82rem;padding:4px 11px;border-radius:999px;margin-bottom:8px;letter-spacing:.02em}
+.promo-card .ptit{font-weight:800;font-size:1.08rem;line-height:1.15}
+.promo-card .pdesc{font-size:.82rem;opacity:.94;margin-top:3px}
 </style>
 </head>
 <body>
@@ -372,6 +381,11 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
   <div class="kicker">Nueva temporada</div>
   <h2 id="heroTit">Tu estilo, a un toque</h2>
   <p id="heroSub">Elegí lo que te gusta, sumalo al carrito y retiralo en el local con tu código. Sin filas, sin esperas.</p>
+</section>
+
+<section class="promos-sec" id="promosSec" style="display:none">
+  <h2>🔥 Promos</h2>
+  <div class="promos-scroll" id="promosScroll"></div>
 </section>
 
 <nav class="cats" id="cats"></nav>
@@ -483,7 +497,36 @@ let PRODUCTOS = [
   {id:'p9', cat:'Perfumes',  nombre:'Perfume Vainilla 100ml',marca:'Esencia',    precio:18999, emoji:'🌸', desc:'Fragancia dulce y envolvente, larga duración. Frasco 100 ml.'},
   {id:'p10',cat:'Perfumes',  nombre:'Perfume Cítrico 100ml', marca:'Esencia',    precio:18999, emoji:'🌿', desc:'Notas frescas de bergamota y limón. Ideal para el día.'},
   {id:'p11',cat:'Remeras',   nombre:'Musculosa Rib',         marca:'Basics',     precio:7499,  emoji:'🎽', desc:'Morley acanalado, entallada y cómoda.'},
-  {id:'p12',cat:'Gorras',    nombre:'Piluso Lino',           marca:'Headline',   precio:10499, emoji:'👒', desc:'Sombrero de lino liviano, perfecto para la playa.'}
+  {id:'p12',cat:'Gorras',    nombre:'Piluso Lino',           marca:'Headline',   precio:10499, emoji:'👒', desc:'Sombrero de lino liviano, perfecto para la playa.'},
+  {id:'p13',cat:'Pantalones',nombre:'Pantalón Cargo Verde',  marca:'Urban Co.',  precio:27999, emoji:'👖', desc:'Cargo de gabardina con bolsillos laterales. Tiro medio.'},
+  {id:'p14',cat:'Pantalones',nombre:'Jean Mom Azul',         marca:'Denim Lab',  precio:31999, emoji:'👖', ultimos:true, desc:'Mom fit tiro alto, denim rígido. Calce cómodo.'},
+  {id:'p15',cat:'Camperas',  nombre:'Campera Puffer Negra',  marca:'Abrigo',     precio:48999, emoji:'🧥', desc:'Inflada liviana, abrigadísima y resistente al agua.'},
+  {id:'p16',cat:'Camperas',  nombre:'Campera de Jean',       marca:'Denim Lab',  precio:39999, emoji:'🧥', desc:'Clásica de jean con botones metálicos. Atemporal.'},
+  {id:'p17',cat:'Calzado',   nombre:'Zapatillas Urbanas',    marca:'Stride',     precio:54999, emoji:'👟', ultimos:true, desc:'Modelo urbano blanco, suela liviana. Unisex.'},
+  {id:'p18',cat:'Calzado',   nombre:'Zapatillas Running',    marca:'Stride',     precio:62999, emoji:'👟', desc:'Amortiguación para entrenar o para el día a día.'},
+  {id:'p19',cat:'Accesorios',nombre:'Medias Pack x3',        marca:'Basics',     precio:6999,  emoji:'🧦', desc:'Pack de 3 pares, algodón con puño elastizado.'},
+  {id:'p20',cat:'Accesorios',nombre:'Riñonera Cruzada',      marca:'Carry',      precio:15999, emoji:'👜', desc:'Bandolera práctica para llevar lo justo. Cierre reforzado.'},
+  {id:'p21',cat:'Accesorios',nombre:'Lentes de Sol Retro',   marca:'Sunny',      precio:13999, emoji:'🕶️', ultimos:true, desc:'Montura redonda estilo retro con protección UV.'},
+  {id:'p22',cat:'Shorts',    nombre:'Short Deportivo',       marca:'Stride',     precio:11999, emoji:'🩳', desc:'Liviano y fresco, con bolsillos. Ideal para entrenar.'},
+  {id:'p23',cat:'Vestidos',  nombre:'Vestido Verano Flores', marca:'Bloom',      precio:26999, emoji:'👗', desc:'Estampa floral, tela fresca con vuelo. Para los días de calor.'},
+  {id:'p24',cat:'Camisas',   nombre:'Camisa Lino Beige',     marca:'Bloom',      precio:23999, emoji:'👔', desc:'Lino puro, corte holgado. Elegancia relajada.'},
+  {id:'p25',cat:'Buzos',     nombre:'Buzo Polar Gris',       marca:'Abrigo',     precio:25999, emoji:'🧥', desc:'Polar suave por dentro, sin capucha. Bien abrigado.'},
+  {id:'p26',cat:'Remeras',   nombre:'Remera Oversize Negra', marca:'Urban Co.',  precio:11999, emoji:'👕', desc:'Corte oversize, algodón pesado. Tendencia total.'},
+  {id:'p27',cat:'Gorras',    nombre:'Gorro Lana Pompón',     marca:'Abrigo',     precio:8999,  emoji:'🧢', desc:'Gorro tejido con pompón. Suave y calentito.'}
+];
+
+/* ============ PROMOS DEMO (en tu tienda real salen del panel) ============ */
+let PROMOS = [
+  {id:'pr1', etiqueta:'2x1',     emoji:'👕', titulo:'2x1 en Remeras',     desc:'Llevá dos y pagás una. La de menor valor, gratis.', g:'#ff7a59,#ff3d77'},
+  {id:'pr2', etiqueta:'-25%',    emoji:'🧥', titulo:'Buzos -25%',          desc:'Todos los buzos con 25% off esta semana.',         g:'#7a5bf0,#5b8bf0'},
+  {id:'pr3', etiqueta:'COMBO',   emoji:'🧣', titulo:'Combo Invierno',      desc:'Buzo + gorro de lana a precio especial.',          g:'#0ea5e9,#16a34a'},
+  {id:'pr4', etiqueta:'3x2',     emoji:'🧦', titulo:'3x2 en Medias',       desc:'Llevá 3 packs y pagá 2.',                          g:'#f59e0b,#ef4444'},
+  {id:'pr5', etiqueta:'2x1',     emoji:'🧢', titulo:'Gorras 2x1',          desc:'En toda la línea de gorras y pilusos.',            g:'#14b8a6,#0ea5e9'},
+  {id:'pr6', etiqueta:'10% 💵',  emoji:'💵', titulo:'Pago en efectivo',    desc:'10% extra de descuento pagando al retirar.',       g:'#22c55e,#16a34a'},
+  {id:'pr7', etiqueta:'-30%',    emoji:'🕶️', titulo:'Lentes -30%',         desc:'Lentes de sol con 30% off. Stock limitado.',       g:'#6366f1,#a855f7'},
+  {id:'pr8', etiqueta:'-40%',    emoji:'☀️', titulo:'Liquidación Verano',  desc:'Hasta 40% en prendas de temporada.',               g:'#fb923c,#f43f5e'},
+  {id:'pr9', etiqueta:'-15%',    emoji:'🎉', titulo:'Primera compra',      desc:'15% off en tu primer encargo. ¡Bienvenido/a!',     g:'#ec4899,#8b5cf6'},
+  {id:'pr10',etiqueta:'2º 50%',  emoji:'👖', titulo:'Llevá 2 Jeans',       desc:'El segundo jean al 50%. Combiná tus favoritos.',   g:'#0891b2,#2563eb'}
 ];
 
 /* ============ ESTADO ============ */
@@ -507,6 +550,7 @@ const EMAILJS_PUBLIC = 'jhKfIcmjuvOrBXfp5';
 let TENANT = null;   // código del local (cuando la tienda es real)
 
 function esImg(s){ return typeof s === 'string' && s.indexOf('data:') === 0; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function media(p){ return esImg(p && p.imagen) ? `<img src="${p.imagen}" alt="">` : (p && p.emoji ? p.emoji : '🛍️'); }
 function logoHTML(l){ return esImg(l) ? `<img src="${l}" alt="">` : (l || '🛍️'); }
 
@@ -529,8 +573,9 @@ async function cargarTienda(){
       TIENDA.telefono  = d.telefono || '';
       if(d.tema) document.documentElement.dataset.tema = d.tema;
       try{ PRODUCTOS = JSON.parse(d.productos || '[]'); }catch(e){ PRODUCTOS = []; }
+      try{ PROMOS = JSON.parse(d.promos || '[]'); }catch(e){ PROMOS = []; }
     } else {
-      PRODUCTOS = []; TIENDA.nombre = 'Tienda'; TIENDA.tagline = '';
+      PRODUCTOS = []; PROMOS = []; TIENDA.nombre = 'Tienda'; TIENDA.tagline = '';
     }
   }catch(e){ console.warn('No se pudo cargar la tienda:', e); }
 }
@@ -567,6 +612,20 @@ function pintarGrid(){
         <button class="add" data-add="${p.id}">🛒 Agregar</button>
       </div>
     </article>`).join('');
+}
+
+/* ============ PROMOS ============ */
+function pintarPromos(){
+  const sec = $('promosSec');
+  if(!PROMOS || !PROMOS.length){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  $('promosScroll').innerHTML = PROMOS.map(p=>`
+    <div class="promo-card" style="background:linear-gradient(135deg,${p.g||'#7a5bf0,#5b8bf0'})">
+      <span class="pemoji">${esc(p.emoji||'🔥')}</span>
+      ${p.etiqueta?`<span class="petq">${esc(p.etiqueta)}</span>`:''}
+      <div class="ptit">${esc(p.titulo||'')}</div>
+      ${p.desc?`<div class="pdesc">${esc(p.desc)}</div>`:''}
+    </div>`).join('');
 }
 
 /* ============ DETALLE ============ */
@@ -761,7 +820,7 @@ document.querySelectorAll('input[name=via]').forEach(r => r.addEventListener('ch
 /* ============ INIT ============ */
 (async function init(){
   await cargarTienda();
-  pintarMarca(); pintarCats(); pintarGrid(); actualizarContador();
+  pintarMarca(); pintarPromos(); pintarCats(); pintarGrid(); actualizarContador();
 })();
 </script>
 </body>
