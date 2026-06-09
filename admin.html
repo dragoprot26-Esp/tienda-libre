@@ -271,6 +271,11 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     </div>
     <label>Precio</label>
     <input id="prodPrecio" type="number" inputmode="numeric" placeholder="24999">
+    <label>Código de barras (opcional)</label>
+    <div style="display:flex;gap:8px">
+      <input id="prodCodbar" placeholder="Escaneá o escribí" style="flex:1">
+      <button class="btn btn-soft" id="btnScan" type="button" style="white-space:nowrap">📷 Escanear</button>
+    </div>
     <label>Descripción</label>
     <textarea id="prodDesc" rows="2" placeholder="Detalle breve del producto"></textarea>
 
@@ -324,10 +329,23 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   </div>
 </div>
 
+<!-- ===== MODAL ESCÁNER ===== -->
+<div class="overlay" id="ovScan">
+  <div class="sheet" style="max-width:420px;text-align:center">
+    <button class="close" id="btnScanClose">×</button>
+    <h3>Escanear código</h3>
+    <p class="hint">Apuntá la cámara al código de barras del producto.</p>
+    <div id="scanBox" style="width:100%;max-width:340px;margin:12px auto;border-radius:12px;overflow:hidden;background:#000;min-height:200px"></div>
+    <div class="hint" id="scanMsg"></div>
+    <button class="btn btn-block" id="btnScanCancel" type="button" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=2"></script>
-<script src="js/licencia.js?v=2"></script>
-<script src="js/admin.js?v=2"></script>
+<script src="js/comun.js?v=3"></script>
+<script src="js/licencia.js?v=3"></script>
+<script src="js/admin.js?v=3"></script>
 </body>
 </html>
