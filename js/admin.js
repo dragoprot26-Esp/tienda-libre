@@ -523,7 +523,11 @@ $('cLogoFile').addEventListener('change', e=>{
 });
 $('cLogoEmoji').addEventListener('input', e=>{ logoImg=''; const v=e.target.value.trim()||'🛍️'; $('cLogoPrev').innerHTML=escHtml(v); });
 
-$('btnVista').addEventListener('click', ()=>window.open(getLinkTienda(), '_blank'));
+$('btnVista').addEventListener('click', ()=>{
+  const url = getLinkTienda();
+  const w = window.open(url, '_blank');
+  if (!w) location.href = url;   // si el navegador bloquea la pestaña nueva, abrimos la tienda acá
+});
 $('btnSalir').addEventListener('click', logoutAdmin);
 $('btnRefVentas').addEventListener('click', refrescarVentasNube);
 $('btnAddPromo').addEventListener('click', ()=>abrirPromo(null));
