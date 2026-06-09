@@ -153,7 +153,9 @@ function logoutAdmin() {
 
 /* Link público de la tienda (lleva el código del local) */
 function getLinkTienda() {
-  const base = location.href.replace('admin.html', 'index.html').split('?')[0].split('#')[0];
+  // Apunta a la raíz del sitio (que sirve index.html), sin importar si el panel
+  // se abrió como /admin.html o como /admin (URL "limpia" de Vercel).
+  const base = location.origin + location.pathname.replace(/[^/]*$/, '');
   let codigo = '';
   try { codigo = (obtenerLicencia() || {}).codigo || ''; } catch (e) {}
   return codigo ? (base + '?tienda=' + encodeURIComponent(codigo)) : base;
