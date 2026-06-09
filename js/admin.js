@@ -113,6 +113,7 @@ function abrirProd(id){
   $('prodCat').value    = p ? (p.cat||'') : '';
   $('prodMarca').value  = p ? (p.marca||'') : '';
   $('prodPrecio').value = p ? (p.precio||'') : '';
+  $('prodCodbar').value = p ? (p.codigobarras||'') : '';
   $('prodDesc').value   = p ? (p.desc||'') : '';
   $('prodUlt').checked  = p ? !!p.ultimos : false;
   imagenProd = p ? (p.imagen||'') : '';
@@ -145,6 +146,7 @@ function guardarProd(){
     cat: $('prodCat').value.trim(),
     marca: $('prodMarca').value.trim(),
     precio: parseFloat($('prodPrecio').value) || 0,
+    codigobarras: $('prodCodbar').value.trim(),
     desc: $('prodDesc').value.trim(),
     imagen: imagenProd || '',
     ultimos: $('prodUlt').checked,
@@ -418,7 +420,39 @@ function iniciarVentas(){
 
 /* ===================== MODALES ===================== */
 function abrir(id){ $(id).classList.add('show'); document.body.style.overflow='hidden'; }
-function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; }
+function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; detenerScanner(); }
+
+/* ===================== ESCÁNER DE CÓDIGO DE BARRAS ===================== */
+let _scanner = null, _scanRun = false;
+async function abrirScanner(){
+  abrir('ovScan');
+  $('scanMsg').textContent = '';
+  if (typeof Html5Qrcode === 'undefined'){ $('scanMsg').textContent = 'No se pudo cargar el lector. Revisá tu conexión e intentá de nuevo.'; return; }
+  try{
+    let fmts;
+    if (window.Html5QrcodeSupportedFormats){
+      const F = Html5QrcodeSupportedFormats;
+      fmts = [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.QR_CODE];
+    }
+    _scanner = new Html5Qrcode('scanBox', fmts ? { formatsToSupport: fmts } : undefined);
+    _scanRun = true;
+    await _scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{width:260,height:160} },
+      (txt)=>{ $('prodCodbar').value = txt; toast('✅ Código: '+txt); cerrarScanner(); },
+      ()=>{});
+  }catch(e){
+    console.warn('scan:', e); _scanRun = false;
+    $('scanMsg').textContent = 'No pudimos abrir la cámara. Dale permiso de cámara al navegador y probá de nuevo.';
+  }
+}
+async function detenerScanner(){
+  if (_scanner && _scanRun){
+    _scanRun = false;
+    try{ await _scanner.stop(); }catch(e){}
+    try{ _scanner.clear(); }catch(e){}
+    _scanner = null;
+  }
+}
+function cerrarScanner(){ $('ovScan').classList.remove('show'); detenerScanner(); }
 
 /* ===================== SEGURIDAD (huella / PIN del celular) ===================== */
 function bioDisponible(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
@@ -542,8 +576,12 @@ $('btnQR').addEventListener('click', abrirQR);
 $('btnQRDesc').addEventListener('click', descargarQR);
 $('btnQRCopy').addEventListener('click', copiarLink);
 $('btnBio').addEventListener('click', toggleBio);
+$('btnScan').addEventListener('click', abrirScanner);
+$('btnScanCancel').addEventListener('click', cerrarScanner);
+$('btnScanClose').addEventListener('click', cerrarScanner);
 
 document.addEventListener('click', e=>{
+  if (e.target.id === 'ovScan') { cerrarScanner(); return; }
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
   if (e.target.classList.contains('overlay')) { cerrarTodo(); return; }
   const tab=e.target.closest('.tab');
