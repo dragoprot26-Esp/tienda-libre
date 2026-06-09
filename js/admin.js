@@ -282,6 +282,35 @@ function eliminarPromo(id){
   toast('Promo eliminada');
 }
 
+/* ===================== QR / COMPARTIR ===================== */
+function abrirQR(){
+  const link = getLinkTienda();
+  $('qrLink').textContent = link;
+  const box = $('qrBox'); box.innerHTML = '';
+  if (typeof QRCode !== 'undefined'){
+    new QRCode(box, { text: link, width: 224, height: 224, correctLevel: QRCode.CorrectLevel.M });
+  } else {
+    box.innerHTML = '<img alt="QR" width="224" height="224" src="https://api.qrserver.com/v1/create-qr-code/?size=224x224&data='+encodeURIComponent(link)+'">';
+  }
+  abrir('ovQR');
+}
+function descargarQR(){
+  const box = $('qrBox');
+  const canvas = box.querySelector('canvas');
+  const img = box.querySelector('img');
+  let url = '';
+  if (canvas) { try{ url = canvas.toDataURL('image/png'); }catch(e){} }
+  if (!url && img) url = img.src;
+  if (!url) { toast('No se pudo generar la imagen'); return; }
+  const a = document.createElement('a');
+  a.href = url; a.download = 'qr-tienda.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function copiarLink(){
+  try { await navigator.clipboard.writeText(getLinkTienda()); toast('🔗 Link copiado'); }
+  catch(e){ toast('Copialo desde el texto de arriba 🙂'); }
+}
+
 /* ===================== VENTAS ===================== */
 let ventasCache = [];
 let _ventasIds = null;     // Set de ids conocidos (null = primera carga, no avisar)
@@ -441,6 +470,9 @@ $('promoFile').addEventListener('change', e=>{
   comprimirImagen(f, 700, b64=>{ promoImg=b64; renderPromoPreview(); });
 });
 $('btnQuitarPromoFoto').addEventListener('click', ()=>{ promoImg=''; $('promoFile').value=''; renderPromoPreview(); });
+$('btnQR').addEventListener('click', abrirQR);
+$('btnQRDesc').addEventListener('click', descargarQR);
+$('btnQRCopy').addEventListener('click', copiarLink);
 
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
