@@ -59,6 +59,7 @@ async function mostrarPanel(){
   pintarModelos();
   pintarProductos();
   pintarPromosPanel();
+  actualizarBtnBio();
   iniciarVentas();
   // Bienvenida
   const b = sessionStorage.getItem('tl_bienvenida');
@@ -217,7 +218,7 @@ function pintarPromosPanel(){
       <div class="pi">
         <div class="t">${escHtml(p.titulo||'')}</div>
         <div class="d">${escHtml(p.desc||'')}</div>
-        ${p.etiqueta?`<span class="q">${escHtml(p.etiqueta)}</span>`:''}
+        ${p.etiqueta?`<span class="q">${escHtml(p.etiqueta)}</span>`:''}${Number(p.precio)>0?` <span class="q">🛒 ${formatPrecio(p.precio)}</span>`:''}
       </div>
       <div class="prod-actions">
         <button class="btn btn-ghost btn-sm" data-editpromo="${p.id}">✏️</button>
@@ -252,6 +253,7 @@ function abrirPromo(id){
   $('promoEmoji').value = p ? (p.emoji||'🔥') : '🔥';
   $('promoEtq').value   = p ? (p.etiqueta||'') : '';
   $('promoTit').value   = p ? (p.titulo||'') : '';
+  $('promoPrecio').value = p ? (p.precio||'') : '';
   $('promoDesc').value  = p ? (p.desc||'') : '';
   promoColor = (p && p.g) ? p.g : PROMO_COLORS[0];
   promoImg = p ? (p.imagen||'') : '';
@@ -266,7 +268,7 @@ function guardarPromo(){
     id: promoEdit || ('pr'+Date.now().toString(36)),
     emoji: $('promoEmoji').value.trim()||'🔥',
     etiqueta: $('promoEtq').value.trim(),
-    titulo, desc: $('promoDesc').value.trim(), g: promoColor, imagen: promoImg||''
+    titulo, desc: $('promoDesc').value.trim(), g: promoColor, imagen: promoImg||'', precio: Number($('promoPrecio').value)||0
   };
   let proms = getPromos();
   if(promoEdit) proms = proms.map(p=>p.id===promoEdit?promo:p);
@@ -418,11 +420,73 @@ function iniciarVentas(){
 function abrir(id){ $(id).classList.add('show'); document.body.style.overflow='hidden'; }
 function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; }
 
+/* ===================== SEGURIDAD (huella / PIN del celular) ===================== */
+function bioDisponible(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
+function bioActivado(){ return localStorage.getItem('tl_bio') === '1'; }
+function _b64(buf){ let s=''; const b=new Uint8Array(buf); for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
+function _unb64(s){ return Uint8Array.from(atob(s), c=>c.charCodeAt(0)); }
+
+async function bioRegistrar(){
+  if(!bioDisponible()) return false;
+  try{
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp:{ name:'Tienda Libre' },
+      user:{ id: crypto.getRandomValues(new Uint8Array(16)), name:(localStorage.getItem('admin_user')||'admin'), displayName:'Admin' },
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required' },
+      timeout:60000
+    }});
+    if(!cred) return false;
+    localStorage.setItem('tl_bio_id', _b64(cred.rawId));
+    localStorage.setItem('tl_bio','1');
+    return true;
+  }catch(e){ console.warn('bio reg:', e); return false; }
+}
+
+async function bioVerificar(){
+  if(!bioActivado()) return true;
+  if(!bioDisponible()) return true;       // si el equipo no lo soporta, no bloqueamos
+  const idb = localStorage.getItem('tl_bio_id');
+  try{
+    await navigator.credentials.get({ publicKey:{
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      timeout:60000, userVerification:'required',
+      allowCredentials: idb ? [{ type:'public-key', id:_unb64(idb) }] : []
+    }});
+    return true;
+  }catch(e){ console.warn('bio ver:', e); return false; }
+}
+
+function actualizarBtnBio(){
+  const b=$('btnBio'); if(!b) return;
+  b.textContent = bioActivado() ? 'Desactivar' : 'Activar';
+}
+async function toggleBio(){
+  if(bioActivado()){
+    localStorage.removeItem('tl_bio'); localStorage.removeItem('tl_bio_id');
+    toast('Bloqueo desactivado'); actualizarBtnBio(); return;
+  }
+  if(!bioDisponible()){ toast('Tu navegador/equipo no permite huella o PIN'); return; }
+  const ok = await bioRegistrar();
+  toast(ok ? '🔒 Bloqueo activado' : 'No se pudo activar (probá desde el celular)');
+  actualizarBtnBio();
+}
+
 /* ===================== EVENTOS ===================== */
-$('loginBtn').addEventListener('click', ()=>{
+$('loginBtn').addEventListener('click', async ()=>{
   const u=$('loginUser').value, p=$('loginPass').value;
-  if (loginAdmin(u,p)) { mostrarPanel(); }
-  else { const e=$('loginErr'); e.textContent='⚠️ Usuario o contraseña incorrectos.'; e.style.display='block'; $('loginPass').value=''; }
+  if (!loginAdmin(u,p)){
+    const e=$('loginErr'); e.textContent='⚠️ Usuario o contraseña incorrectos.'; e.style.display='block'; $('loginPass').value=''; return;
+  }
+  if (bioActivado()){
+    const ok = await bioVerificar();
+    if(!ok){
+      sessionStorage.removeItem('tl_logged');
+      const e=$('loginErr'); e.textContent='🔒 No se pudo verificar tu huella/PIN. Probá de nuevo.'; e.style.display='block'; return;
+    }
+  }
+  mostrarPanel();
 });
 $('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginBtn').click(); });
 $('linkActivar').addEventListener('click', ()=>abrir('ovLic'));
@@ -473,6 +537,7 @@ $('btnQuitarPromoFoto').addEventListener('click', ()=>{ promoImg=''; $('promoFil
 $('btnQR').addEventListener('click', abrirQR);
 $('btnQRDesc').addEventListener('click', descargarQR);
 $('btnQRCopy').addEventListener('click', copiarLink);
+$('btnBio').addEventListener('click', toggleBio);
 
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
