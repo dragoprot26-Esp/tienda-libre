@@ -142,6 +142,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 .promo-li .pi .t{font-weight:700}
 .promo-li .pi .d{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .promo-li .pi .q{display:inline-block;font-size:.68rem;background:var(--pri-soft);color:var(--pri);padding:2px 8px;border-radius:999px;font-weight:700;margin-top:3px}
+.bio-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:10px}
+.bio-row b{font-size:.95rem}
 </style>
 </head>
 <body>
@@ -226,6 +228,15 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
       <div class="modelos-grid" id="modelosGrid"></div>
 
       <button class="btn btn-block" id="btnGuardarConfig" style="margin-top:22px">💾 Guardar configuración</button>
+
+      <h2 class="sectitle" style="margin-top:26px">Seguridad</h2>
+      <div class="bio-row">
+        <div>
+          <b>🔒 Bloqueo con huella / PIN</b>
+          <div class="hint">Al entrar, además de tu usuario y contraseña, te pide la huella, PIN o patrón del celular.</div>
+        </div>
+        <button class="btn btn-soft btn-sm" id="btnBio" type="button">Activar</button>
+      </div>
     </section>
   </div>
 </div>
@@ -284,7 +295,9 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
       <div><label>Etiqueta (chica)</label><input id="promoEtq" maxlength="12" placeholder="2x1 / -25%"></div>
     </div>
     <label>Título</label>
-    <input id="promoTit" placeholder="Ej: 2x1 en Remeras">
+    <input id="promoTit" placeholder="Ej: Combo Invierno (buzo + gorro)">
+    <label>Precio para encargar <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+    <input id="promoPrecio" type="number" inputmode="numeric" placeholder="Ej: 19999 — vacío = promo informativa">
     <label>Descripción</label>
     <textarea id="promoDesc" rows="2" placeholder="Detalle breve de la promo"></textarea>
     <label>Foto (opcional)</label>
