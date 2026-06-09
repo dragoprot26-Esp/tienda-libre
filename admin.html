@@ -205,6 +205,7 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
     <!-- CONFIG -->
     <section id="secConfig" class="sec">
+      <button class="btn btn-block" id="btnQR" style="margin-bottom:16px">📱 Compartir mi tienda (QR + link)</button>
       <h2 class="sectitle">Datos del local</h2>
       <label>Nombre del local</label>
       <input id="cNombre" placeholder="Ej: Tienda Libre">
@@ -295,7 +296,23 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   </div>
 </div>
 
+<!-- ===== MODAL QR ===== -->
+<div class="overlay" id="ovQR">
+  <div class="sheet" style="max-width:360px;text-align:center">
+    <button class="close" data-close>×</button>
+    <h3>Tu tienda 🛍️</h3>
+    <p class="hint">Mostralo o imprimilo. Tus clientes lo escanean y entran directo.</p>
+    <div id="qrBox" style="display:flex;justify-content:center;padding:16px;background:#fff;border-radius:16px;margin:14px auto;width:fit-content"></div>
+    <div id="qrLink" style="font-size:.78rem;color:var(--muted);word-break:break-all;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-block" id="btnQRDesc">⬇️ Descargar</button>
+      <button class="btn btn-soft btn-block" id="btnQRCopy">🔗 Copiar link</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/comun.js"></script>
 <script src="js/licencia.js"></script>
 <script src="js/admin.js"></script>
