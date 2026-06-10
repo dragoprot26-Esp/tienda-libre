@@ -25,8 +25,13 @@ const _origSetItem = localStorage.setItem.bind(localStorage);
 
 function _tlCodigo() {
   try {
-    const lic = JSON.parse(localStorage.getItem('tl_licencia') || 'null');
-    const c = lic && lic.codigo ? lic.codigo : null;
+    const raw = localStorage.getItem('tl_licencia');
+    if (!raw) return null;
+    let c = null;
+    try {
+      const lic = JSON.parse(raw);
+      c = (lic && lic.codigo) ? lic.codigo : (typeof lic === 'string' ? lic : null);
+    } catch (e) { c = raw; }   // si quedó guardado como texto plano, lo usamos igual
     if (!c || c === 'TRIAL-15') return null;
     return c;
   } catch (e) { return null; }
@@ -156,7 +161,6 @@ function getLinkTienda() {
   // Apunta a la raíz del sitio (que sirve index.html), sin importar si el panel
   // se abrió como /admin.html o como /admin (URL "limpia" de Vercel).
   const base = location.origin + location.pathname.replace(/[^/]*$/, '');
-  let codigo = '';
-  try { codigo = (obtenerLicencia() || {}).codigo || ''; } catch (e) {}
+  const codigo = _tlCodigo() || '';
   return codigo ? (base + '?tienda=' + encodeURIComponent(codigo)) : base;
 }
