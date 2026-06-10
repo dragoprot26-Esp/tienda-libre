@@ -749,9 +749,9 @@ document.addEventListener('click', e=>{
   const rm=e.target.closest('[data-rmextra]'); if(rm){ rm.closest('.extra-row').remove(); return; }
   const tm=e.target.closest('[data-tema]');
   if (tm){ temaSel=tm.dataset.tema; pintarModelos(); return; }
-  const ta=e.target.closest('[data-temaadmin]');
+  const ta=e.target.closest('#temasAdmin [data-temaadmin]');
   if (ta){ aplicarTemaAdmin(ta.dataset.temaadmin); return; }
-  const lk=e.target.closest('[data-lockmin]');
+  const lk=e.target.closest('#lockOpts [data-lockmin]');
   if (lk){ elegirLock(parseInt(lk.dataset.lockmin,10)||0); return; }
 });
 
