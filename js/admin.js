@@ -91,6 +91,8 @@ async function mostrarPanel(){
   aplicarRol();
   actualizarBtnBio();
   iniciarVentas();
+  marcarLock();
+  resetLockTimer();
   // Bienvenida
   const b = sessionStorage.getItem('tl_bienvenida');
   if (b) { sessionStorage.removeItem('tl_bienvenida'); setTimeout(()=>toast('🎉 ¡Bienvenido/a! Cargá tus productos y elegí tu modelo.'), 400); }
@@ -749,6 +751,8 @@ document.addEventListener('click', e=>{
   if (tm){ temaSel=tm.dataset.tema; pintarModelos(); return; }
   const ta=e.target.closest('[data-temaadmin]');
   if (ta){ aplicarTemaAdmin(ta.dataset.temaadmin); return; }
+  const lk=e.target.closest('[data-lockmin]');
+  if (lk){ elegirLock(parseInt(lk.dataset.lockmin,10)||0); return; }
 });
 
 /* ===================== TEMA DEL PANEL (por dispositivo) ===================== */
@@ -766,9 +770,55 @@ function aplicarTemaAdmin(t){
   toast('🎨 Tema aplicado');
 }
 
+/* ===================== AUTO-BLOQUEO POR INACTIVIDAD ===================== */
+let _lockTimer = null, _lastActiv = 0;
+function lockMin(){
+  const raw = localStorage.getItem('tl_lock_min');
+  if (raw === null) return 10;            // default 10 min
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 10 : n;               // 0 = nunca
+}
+function marcarLock(){
+  const cur = String(lockMin());
+  document.querySelectorAll('#lockOpts .tema-op').forEach(b=>{
+    b.classList.toggle('on', b.dataset.lockmin === cur);
+  });
+}
+function resetLockTimer(){
+  if (_lockTimer){ clearTimeout(_lockTimer); _lockTimer = null; }
+  const min = lockMin();
+  if (!min || min <= 0) return;           // 0 = nunca
+  if (!isAdminLogged()) return;           // sólo con sesión abierta
+  _lockTimer = setTimeout(bloquearPorInactividad, min * 60 * 1000);
+}
+function bloquearPorInactividad(){
+  if (!isAdminLogged()) return;
+  sessionStorage.removeItem('tl_logged');
+  try{ cerrarTodo(); }catch(e){}
+  mostrarLogin();
+  const e = $('loginErr');
+  if (e){ e.textContent = '🔒 Se bloqueó por inactividad. Ingresá de nuevo.'; e.style.display = 'block'; }
+}
+function _onActividad(){
+  const now = Date.now();
+  if (now - _lastActiv < 3000) return;    // no resetear más de 1 vez cada 3s
+  _lastActiv = now;
+  resetLockTimer();
+}
+['click','keydown','touchstart','mousemove','scroll'].forEach(ev=>{
+  document.addEventListener(ev, _onActividad, { passive:true });
+});
+function elegirLock(min){
+  localStorage.setItem('tl_lock_min', String(min));
+  marcarLock();
+  resetLockTimer();
+  toast(min>0 ? ('🔒 Bloqueo a los '+min+' min') : '🔓 Bloqueo automático desactivado');
+}
+
 /* ===================== INIT ===================== */
 (function init(){
   marcarTemaAdmin();
+  marcarLock();
   if (isAdminLogged() && (rolActual()==='colab' || verificarLicencia())) mostrarPanel();
   else mostrarLogin();
 })();
