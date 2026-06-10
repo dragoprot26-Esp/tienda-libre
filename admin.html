@@ -50,6 +50,12 @@ try{ var _ta=localStorage.getItem('tl_admin_tema'); if(_ta && _ta!=='claro') doc
 .tema-op{display:flex;align-items:center;gap:10px;border:2px solid var(--border);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font-weight:600;font-size:.9rem;cursor:pointer}
 .tema-op .sw{width:26px;height:26px;border-radius:8px;flex:0 0 auto;border:1px solid rgba(0,0,0,.12)}
 .tema-op.on{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+/* campo de contraseña con ojito + medidor de fuerza */
+.pass-wrap{position:relative}
+.pass-wrap input{padding-right:46px}
+.pass-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:transparent;width:36px;height:36px;font-size:1.05rem;cursor:pointer;padding:0}
+.pass-meter{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+.pass-meter span{display:block;height:100%;width:0;border-radius:999px;background:var(--bad);transition:width .2s,background .2s}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh}
 h1,h2,h3,.disp{font-family:'Fraunces',serif;letter-spacing:-.01em}
@@ -443,7 +449,12 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     <label>Usuario (para entrar)</label>
     <input id="colabUser" placeholder="Ej: sofia" autocapitalize="off" style="text-transform:lowercase">
     <label>Contraseña</label>
-    <input id="colabPass" placeholder="Una contraseña para tu colaborador">
+    <div class="pass-wrap">
+      <input id="colabPass" type="password" placeholder="Mínimo 6 caracteres">
+      <button type="button" class="pass-eye" id="colabPassEye" aria-label="Mostrar u ocultar">👁️</button>
+    </div>
+    <div class="pass-meter"><span id="colabPassBar"></span></div>
+    <div class="hint" id="colabPassHint">Mínimo 6 caracteres. Evitá "1234" o el mismo usuario.</div>
     <div class="err" id="colabErr"></div>
     <button class="btn btn-block" id="btnGuardarColab" style="margin-top:16px">💾 Guardar colaborador</button>
   </div>
@@ -451,8 +462,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=10"></script>
-<script src="js/licencia.js?v=10"></script>
-<script src="js/admin.js?v=10"></script>
+<script src="js/comun.js?v=11"></script>
+<script src="js/licencia.js?v=11"></script>
+<script src="js/admin.js?v=11"></script>
 </body>
 </html>
