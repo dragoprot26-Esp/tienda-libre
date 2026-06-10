@@ -58,6 +58,7 @@ function nombreUsuario(){ return sessionStorage.getItem('tl_user') || 'Dueño'; 
 function aplicarRol(){
   const dueno = esDueno();
   const tabEq = $('tabEquipo'); if (tabEq) tabEq.style.display = dueno ? '' : 'none';
+  const tabCtrl = $('tabControl'); if (tabCtrl) tabCtrl.style.display = dueno ? '' : 'none';
   const seg = $('bloqueSeguridad'); if (seg) seg.style.display = dueno ? '' : 'none';
   const cfgB = $('bloqueConfig'); if (cfgB) cfgB.style.display = dueno ? '' : 'none';
 }
@@ -446,8 +447,54 @@ async function refrescarVentasNube(){
     _ventasIds = ids;
     ventasCache = ventas;
     pintarVentas();
+    pintarControl();
     actualizarBadgeVentas();
   }catch(e){ console.warn('ventas:', e); }
+}
+
+function kFmt(n){ n=Number(n)||0; return n>=1000 ? (Math.round(n/100)/10)+'k' : String(n); }
+function pintarControl(){
+  if (!$('secControl')) return;
+  const entregados = ventasCache.filter(v => v.estado==='entregado');
+  const total = entregados.reduce((s,v)=>s+(Number(v.total)||0),0);
+  const cant = entregados.length;
+  $('stTotal').textContent  = formatPrecio(total);
+  $('stCant').textContent   = cant;
+  $('stTicket').textContent = formatPrecio(cant ? Math.round(total/cant) : 0);
+
+  // Por día (últimos 7)
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dias = [];
+  for (let i=6;i>=0;i--){ const d=new Date(hoy); d.setDate(d.getDate()-i); dias.push(d); }
+  const nomDia = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+  const montos = dias.map(d=>{
+    const ini=d.getTime(), fin=ini+86400000;
+    return entregados.filter(v=>{ const t=v.fecha||0; return t>=ini && t<fin; }).reduce((s,v)=>s+(Number(v.total)||0),0);
+  });
+  const maxD = Math.max(1, ...montos);
+  $('barsDias').innerHTML = `<div class="bars-v">` + dias.map((d,i)=>{
+    const h = Math.round((montos[i]/maxD)*100);
+    return `<div class="bar-col"><div class="bar" style="height:${h}%">${montos[i]?`<span class="bv">${kFmt(montos[i])}</span>`:''}</div><span class="bl">${nomDia[d.getDay()]}</span></div>`;
+  }).join('') + `</div>`;
+
+  // Por vendedor
+  const porV = {};
+  entregados.forEach(v=>{ const k=v.atendidoPor||'—'; porV[k]=(porV[k]||0)+(Number(v.total)||0); });
+  const vends = Object.entries(porV).sort((a,b)=>b[1]-a[1]);
+  const maxV = Math.max(1, ...vends.map(x=>x[1]));
+  $('barsVend').innerHTML = vends.length
+    ? vends.map(([n,m])=>`<div class="bar-h"><span class="hl">${escHtml(n)}</span><div class="ht"><div class="hf" style="width:${Math.round((m/maxV)*100)}%"></div></div><span class="hn">${formatPrecio(m)}</span></div>`).join('')
+    : `<div class="hint">Todavía no hay ventas entregadas.</div>`;
+
+  // Historial
+  const cont = $('histVentas');
+  if (!entregados.length){ cont.innerHTML = `<div class="hint">Cuando entregues encargos, el historial aparece acá.</div>`; return; }
+  cont.innerHTML = entregados.slice().sort((a,b)=>(b.fecha||0)-(a.fecha||0)).slice(0,50).map(v=>`
+    <div class="venta-card e-entregado">
+      <div class="vc-top"><span class="vc-cod">${escHtml(v.codigo)}</span><span class="vc-est entregado">📦 Entregado</span></div>
+      <div class="vc-cli">👤 ${escHtml((v.cliente&&v.cliente.nombre)||'')} · <b>${formatPrecio(v.total)}</b></div>
+      <div class="vc-fecha">${fmtFechaCorta(v.fecha)}${v.atendidoPor?` · Vendedor: <b>${escHtml(v.atendidoPor)}</b>`:''}</div>
+    </div>`).join('');
 }
 
 function actualizarBadgeVentas(){
@@ -459,12 +506,13 @@ function actualizarBadgeVentas(){
 
 function pintarVentas(){
   const cont = $('listaVentas');
-  if (!ventasCache.length){
-    cont.innerHTML = `<div class="empty"><span class="e">🛍️</span>Todavía no hay encargos.<br>Cuando un cliente confirme uno, aparece acá.</div>`;
+  const activas = ventasCache.filter(v => (v.estado||'pendiente') !== 'entregado');
+  if (!activas.length){
+    cont.innerHTML = `<div class="empty"><span class="e">🛍️</span>No hay encargos activos.<br>Los entregados están en 📊 Control.</div>`;
     return;
   }
   const lbl = {pendiente:'⏳ Pendiente', listo:'✅ Listo para retirar', entregado:'📦 Entregado'};
-  cont.innerHTML = ventasCache.map(v=>{
+  cont.innerHTML = activas.map(v=>{
     const est = v.estado || 'pendiente';
     const items = (v.items||[]).map(i=>`${i.cantidad}× ${escHtml(i.nombre)}`).join(' · ');
     const tel = (v.cliente && v.cliente.telefono) || '';
@@ -663,6 +711,7 @@ document.addEventListener('click', e=>{
   if (tab){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); tab.classList.add('on');
     document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on')); $(tab.dataset.sec).classList.add('on');
     if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
+    if (tab.dataset.sec==='secControl') pintarControl();
     return; }
   const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
   const ec=e.target.closest('[data-editcolab]'); if(ec){ abrirColab(ec.dataset.editcolab); return; }
