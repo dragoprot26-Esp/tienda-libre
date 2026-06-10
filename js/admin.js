@@ -59,6 +59,7 @@ function aplicarRol(){
   const dueno = esDueno();
   const tabEq = $('tabEquipo'); if (tabEq) tabEq.style.display = dueno ? '' : 'none';
   const seg = $('bloqueSeguridad'); if (seg) seg.style.display = dueno ? '' : 'none';
+  const cfgB = $('bloqueConfig'); if (cfgB) cfgB.style.display = dueno ? '' : 'none';
 }
 
 /* ===================== VISTAS ===================== */
