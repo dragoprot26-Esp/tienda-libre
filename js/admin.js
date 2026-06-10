@@ -47,11 +47,18 @@ function rolActual(){ return sessionStorage.getItem('tl_rol') || 'dueno'; }
 function esDueno(){ return rolActual() !== 'colab'; }
 function nombreUsuario(){ return sessionStorage.getItem('tl_user') || 'Dueño'; }
 
-/* Si llega ?equipo=CODIGO, este equipo queda asociado al local (sin credenciales de dueño) */
+/* Si llega ?equipo=CODIGO, este equipo queda asociado al local (sin credenciales de dueño).
+   IMPORTANTE: no pisa la licencia del dueño si ya existe, y guarda el formato JSON correcto. */
 (function(){
   try{
     const eq = new URLSearchParams(location.search).get('equipo');
-    if (eq) localStorage.setItem('tl_licencia', eq.trim().toUpperCase());
+    if (!eq) return;
+    let cur = null;
+    try { cur = JSON.parse(localStorage.getItem('tl_licencia') || 'null'); } catch(e){}
+    if (cur && cur.codigo) return;   // ya hay una licencia con código (dueño): NO tocar
+    localStorage.setItem('tl_licencia', JSON.stringify({
+      codigo: eq.trim().toUpperCase(), valida: true, equipo: true
+    }));
   }catch(e){}
 })();
 
@@ -331,10 +338,13 @@ function pintarColabs(){
       </div>`).join('');
   }
   const codigo = _tlCodigo();
-  if(codigo){
+  const box = $('colabLinkBox');
+  if (codigo && arr.length) {
     const base = location.origin + location.pathname.replace(/[^/]*$/, 'admin.html');
     $('colabLink').textContent = base + '?equipo=' + encodeURIComponent(codigo);
-    $('colabLinkBox').style.display = arr.length ? 'block' : 'none';
+    if (box) box.style.display = 'block';
+  } else {
+    if (box) box.style.display = 'none';
   }
 }
 function abrirColab(id){
