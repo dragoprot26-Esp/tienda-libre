@@ -69,7 +69,11 @@ async function activarLicencia(codigo) {
 
   // Las credenciales del panel pasan a ser el login del admin
   if (remote.usuario_admin) localStorage.setItem('admin_user', remote.usuario_admin);
-  if (remote.pass_admin)    localStorage.setItem('admin_pass', btoa(remote.pass_admin));
+  if (remote.pass_admin) {
+    const _salt = 'owner:' + (remote.usuario_admin || '');
+    const _h = (typeof tlHash === 'function') ? await tlHash(remote.pass_admin, _salt) : null;
+    localStorage.setItem('admin_pass', _h || btoa(remote.pass_admin));
+  }
 
   // Traer datos de ESTE local desde la nube
   try {
