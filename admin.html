@@ -144,6 +144,22 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 .promo-li .pi .q{display:inline-block;font-size:.68rem;background:var(--pri-soft);color:var(--pri);padding:2px 8px;border-radius:999px;font-weight:700;margin-top:3px}
 .bio-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:10px}
 .bio-row b{font-size:.95rem}
+/* ===== CONTROL / DASHBOARD ===== */
+.ctitle{font-size:.95rem;margin:18px 0 10px;color:var(--ink)}
+.stats-row{display:flex;gap:10px}
+.stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center}
+.stat .n{display:block;font-family:'Fraunces';font-size:1.15rem;font-weight:700;color:var(--ink);line-height:1.1}
+.stat .l{font-size:.7rem;color:var(--muted)}
+.bars-v{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 12px 10px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bar-col .bar{width:100%;max-width:34px;background:linear-gradient(180deg,var(--pri),#9b7bf0);border-radius:6px 6px 0 0;min-height:2px;position:relative;transition:height .4s}
+.bar-col .bv{font-size:.6rem;color:var(--muted);position:absolute;top:-15px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.bar-col .bl{font-size:.66rem;color:var(--muted)}
+.bar-h{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.bar-h .hl{width:84px;font-size:.8rem;flex:0 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.bar-h .ht{flex:1;background:var(--surface-2);border-radius:8px;overflow:hidden;height:22px}
+.bar-h .hf{height:100%;background:linear-gradient(90deg,var(--pri),#9b7bf0);border-radius:8px;min-width:3px;transition:width .4s}
+.bar-h .hn{font-size:.74rem;font-weight:700;flex:0 0 auto;min-width:60px;text-align:right}
 </style>
 </head>
 <body>
@@ -177,6 +193,7 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   <div class="tabs">
     <button class="tab on" data-sec="secProductos">📦 Productos</button>
     <button class="tab" data-sec="secVentas" id="tabVentas">🔔 Ventas<span class="badge-n" id="ventasBadge" style="display:none">0</span></button>
+    <button class="tab" data-sec="secControl" id="tabControl">📊 Control</button>
     <button class="tab" data-sec="secPromos">🔥 Promos</button>
     <button class="tab" data-sec="secEquipo" id="tabEquipo">👥 Equipo</button>
     <button class="tab" data-sec="secConfig">⚙️ Ajustes</button>
@@ -197,6 +214,21 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
       </div>
       <p class="hint" style="margin-bottom:10px">Se actualiza solo cada pocos segundos. Marcá cada encargo cuando esté listo o entregado.</p>
       <div id="listaVentas"></div>
+    </section>
+
+    <!-- CONTROL DE VENTAS -->
+    <section id="secControl" class="sec">
+      <div class="stats-row">
+        <div class="stat"><span class="n" id="stTotal">$0</span><span class="l">Vendido</span></div>
+        <div class="stat"><span class="n" id="stCant">0</span><span class="l">Entregados</span></div>
+        <div class="stat"><span class="n" id="stTicket">$0</span><span class="l">Ticket prom.</span></div>
+      </div>
+      <h3 class="ctitle">Ventas por día (últimos 7)</h3>
+      <div id="barsDias"></div>
+      <h3 class="ctitle">Por vendedor</h3>
+      <div id="barsVend"></div>
+      <h3 class="ctitle">Historial de entregados</h3>
+      <div id="histVentas"></div>
     </section>
 
     <!-- PROMOS -->
