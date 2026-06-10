@@ -6,6 +6,10 @@
 <title>Tienda Libre — Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script>
+/* Aplica el tema del panel lo antes posible para evitar parpadeo */
+try{ var _ta=localStorage.getItem('tl_admin_tema'); if(_ta && _ta!=='claro') document.documentElement.setAttribute('data-temaadmin', _ta); }catch(e){}
+</script>
 <style>
 :root{
   --bg:#f4f5f9; --surface:#fff; --surface-2:#f7f8fc;
@@ -15,6 +19,37 @@
   --border:#e6e8f0; --radius:16px; --radius-sm:10px;
   --shadow:0 10px 30px rgba(40,40,90,.10);
 }
+/* ===== TEMAS DEL PANEL (por dispositivo) ===== */
+:root[data-temaadmin="suave"]{
+  --bg:#f3ede1; --surface:#fbf7ef; --surface-2:#f1e9da;
+  --ink:#3a322a; --ink-2:#6b6051; --muted:#a99e8c;
+  --pri:#9a6b2f; --pri-2:#b07a3c; --pri-soft:#efe2cf; --on-pri:#fff;
+  --border:#e3d8c4; --shadow:0 10px 30px rgba(90,70,40,.12);
+}
+:root[data-temaadmin="oscuro"]{
+  --bg:#14161d; --surface:#1d2029; --surface-2:#262a35;
+  --ink:#e8eaf0; --ink-2:#aab0c0; --muted:#7a8092;
+  --pri:#7b7bff; --pri-2:#9a7bff; --pri-soft:#272a44; --on-pri:#fff;
+  --border:#313542; --shadow:0 10px 30px rgba(0,0,0,.5);
+}
+:root[data-temaadmin="medianoche"]{
+  --bg:#0e1430; --surface:#16203f; --surface-2:#1d2950;
+  --ink:#e6ecff; --ink-2:#9fb0d8; --muted:#6b7ba8;
+  --pri:#5b8bff; --pri-2:#7a6bff; --pri-soft:#1f2a55; --on-pri:#fff;
+  --border:#27345e; --shadow:0 10px 30px rgba(0,0,10,.55);
+}
+/* fondo del login acorde a cada tema */
+:root[data-temaadmin="suave"] .login-wrap{background:linear-gradient(160deg,#f3ede1,#fbf7ef 60%,#fff)}
+:root[data-temaadmin="oscuro"] .login-wrap{background:linear-gradient(160deg,#1a1d26,#14161d 60%,#0e1015)}
+:root[data-temaadmin="medianoche"] .login-wrap{background:linear-gradient(160deg,#16203f,#0e1430 60%,#0a0f24)}
+/* en oscuros, toast y etiqueta usan fondo propio (no el texto claro) */
+:root[data-temaadmin="oscuro"] .toast,:root[data-temaadmin="medianoche"] .toast{background:#2a2e3a;color:#fff}
+:root[data-temaadmin="oscuro"] .tag-ult,:root[data-temaadmin="medianoche"] .tag-ult{background:var(--pri);color:#fff}
+/* selector de tema */
+.temas-admin{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.tema-op{display:flex;align-items:center;gap:10px;border:2px solid var(--border);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font-weight:600;font-size:.9rem;cursor:pointer}
+.tema-op .sw{width:26px;height:26px;border-radius:8px;flex:0 0 auto;border:1px solid rgba(0,0,0,.12)}
+.tema-op.on{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh}
 h1,h2,h3,.disp{font-family:'Fraunces',serif;letter-spacing:-.01em}
@@ -254,6 +289,18 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     <!-- CONFIG -->
     <section id="secConfig" class="sec">
       <button class="btn btn-block" id="btnQR" style="margin-bottom:16px">📱 Compartir mi tienda (QR + link)</button>
+
+      <div id="bloqueTemaAdmin" style="margin-bottom:20px">
+        <h2 class="sectitle">🎨 Tema del panel</h2>
+        <p class="hint">Cómo se ve este panel en tu dispositivo. No afecta la tienda de tus clientes.</p>
+        <div class="temas-admin" id="temasAdmin">
+          <button class="tema-op" data-temaadmin="claro"><span class="sw" style="background:linear-gradient(135deg,#ffffff,#eef0ff)"></span>Claro</button>
+          <button class="tema-op" data-temaadmin="suave"><span class="sw" style="background:linear-gradient(135deg,#fbf7ef,#e3d8c4)"></span>Suave</button>
+          <button class="tema-op" data-temaadmin="oscuro"><span class="sw" style="background:linear-gradient(135deg,#262a35,#14161d)"></span>Oscuro</button>
+          <button class="tema-op" data-temaadmin="medianoche"><span class="sw" style="background:linear-gradient(135deg,#1d2950,#0e1430)"></span>Medianoche</button>
+        </div>
+      </div>
+
       <div id="bloqueConfig">
       <h2 class="sectitle">Datos del local</h2>
       <label>Nombre del local</label>
@@ -392,8 +439,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=6"></script>
-<script src="js/licencia.js?v=6"></script>
-<script src="js/admin.js?v=6"></script>
+<script src="js/comun.js?v=7"></script>
+<script src="js/licencia.js?v=7"></script>
+<script src="js/admin.js?v=7"></script>
 </body>
 </html>
