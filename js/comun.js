@@ -139,16 +139,32 @@ function categoriasDe(prods) {
    ===================================================================== */
 function isAdminLogged() { return sessionStorage.getItem('tl_logged') === 'true'; }
 
-function loginAdmin(user, pass) {
+/* ===== Hash de contraseñas (SHA-256, con "sal" por usuario/local) ===== */
+async function tlHash(plain, salt) {
+  try {
+    const data = new TextEncoder().encode((salt || '') + '|' + (plain == null ? '' : plain));
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) { return null; }
+}
+function _esHash(s) { return typeof s === 'string' && /^[0-9a-f]{64}$/.test(s); }
+
+async function loginAdmin(user, pass) {
   const u = localStorage.getItem('admin_user');
   const stored = localStorage.getItem('admin_pass');
   if (!u || !stored) return false;
-  let p = '';
-  try { p = atob(stored); } catch (e) { return false; }
-  if (String(user).trim() === u && pass === p) {
-    sessionStorage.setItem('tl_logged', 'true');
-    return true;
+  if (String(user).trim() !== u) return false;
+  let ok = false;
+  if (_esHash(stored)) {
+    const h = await tlHash(pass, 'owner:' + u);
+    ok = (h !== null && h === stored);
+  } else {
+    // Legado: clave guardada en base64. La aceptamos y migramos a hash.
+    let p = ''; try { p = atob(stored); } catch (e) { p = ''; }
+    ok = (pass === p);
+    if (ok) { const h = await tlHash(pass, 'owner:' + u); if (h) localStorage.setItem('admin_pass', h); }
   }
+  if (ok) { sessionStorage.setItem('tl_logged', 'true'); return true; }
   return false;
 }
 function logoutAdmin() {
