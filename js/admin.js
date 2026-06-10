@@ -736,10 +736,28 @@ document.addEventListener('click', e=>{
   const rm=e.target.closest('[data-rmextra]'); if(rm){ rm.closest('.extra-row').remove(); return; }
   const tm=e.target.closest('[data-tema]');
   if (tm){ temaSel=tm.dataset.tema; pintarModelos(); return; }
+  const ta=e.target.closest('[data-temaadmin]');
+  if (ta){ aplicarTemaAdmin(ta.dataset.temaadmin); return; }
 });
+
+/* ===================== TEMA DEL PANEL (por dispositivo) ===================== */
+function marcarTemaAdmin(){
+  const actual = document.documentElement.getAttribute('data-temaadmin') || 'claro';
+  document.querySelectorAll('#temasAdmin .tema-op').forEach(b=>{
+    b.classList.toggle('on', b.dataset.temaadmin === actual);
+  });
+}
+function aplicarTemaAdmin(t){
+  if (!t || t==='claro') document.documentElement.removeAttribute('data-temaadmin');
+  else document.documentElement.setAttribute('data-temaadmin', t);
+  try{ localStorage.setItem('tl_admin_tema', t||'claro'); }catch(e){}
+  marcarTemaAdmin();
+  toast('🎨 Tema aplicado');
+}
 
 /* ===================== INIT ===================== */
 (function init(){
+  marcarTemaAdmin();
   if (isAdminLogged() && (rolActual()==='colab' || verificarLicencia())) mostrarPanel();
   else mostrarLogin();
 })();
