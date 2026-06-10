@@ -15,7 +15,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
    SYNC MULTI-INQUILINO — 1 fila por local. Tabla: tiendalibre_backups
    ===================================================================== */
 const TL_SYNC_KEYS = [
-  'productos', 'promos',
+  'productos', 'promos', 'colaboradores',
   'nombre_local', 'tagline', 'logo', 'direccion', 'telefono', 'tema'
 ];
 
