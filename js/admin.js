@@ -359,12 +359,14 @@ function guardarColab(){
   if(colabEdit) arr = arr.map(c=>c.id===colabEdit?colab:c);
   else arr.unshift(colab);
   setColabs(arr);
+  if (typeof tlNubeGuardar === 'function') tlNubeGuardar();   // subir YA (no esperar el retardo)
   cerrarTodo(); pintarColabs();
   toast(colabEdit?'✅ Colaborador actualizado':'✅ Colaborador agregado');
 }
 function eliminarColab(id){
   if(!confirm('¿Eliminar este colaborador?')) return;
   setColabs(getColabs().filter(c=>c.id!==id));
+  if (typeof tlNubeGuardar === 'function') tlNubeGuardar();
   pintarColabs();
   toast('Colaborador eliminado');
 }
