@@ -301,6 +301,18 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
         </div>
       </div>
 
+      <div id="bloqueLock" style="margin-bottom:20px">
+        <h2 class="sectitle">🔒 Bloqueo automático</h2>
+        <p class="hint">Si dejás el panel quieto, vuelve a pedir tu acceso. Se guarda en este dispositivo.</p>
+        <div class="temas-admin" id="lockOpts" style="grid-template-columns:repeat(3,1fr)">
+          <button class="tema-op" data-lockmin="0">Nunca</button>
+          <button class="tema-op" data-lockmin="1">1 min</button>
+          <button class="tema-op" data-lockmin="5">5 min</button>
+          <button class="tema-op" data-lockmin="10">10 min</button>
+          <button class="tema-op" data-lockmin="30">30 min</button>
+        </div>
+      </div>
+
       <div id="bloqueConfig">
       <h2 class="sectitle">Datos del local</h2>
       <label>Nombre del local</label>
@@ -439,8 +451,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=8"></script>
-<script src="js/licencia.js?v=8"></script>
-<script src="js/admin.js?v=8"></script>
+<script src="js/comun.js?v=9"></script>
+<script src="js/licencia.js?v=9"></script>
+<script src="js/admin.js?v=9"></script>
 </body>
 </html>
