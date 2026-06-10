@@ -42,6 +42,25 @@ function comprimirImagen(file, max, cb){
 }
 function esImg(s){ return typeof s==='string' && s.indexOf('data:')===0; }
 
+/* ---------- rol / usuario actual ---------- */
+function rolActual(){ return sessionStorage.getItem('tl_rol') || 'dueno'; }
+function esDueno(){ return rolActual() !== 'colab'; }
+function nombreUsuario(){ return sessionStorage.getItem('tl_user') || 'Dueño'; }
+
+/* Si llega ?equipo=CODIGO, este equipo queda asociado al local (sin credenciales de dueño) */
+(function(){
+  try{
+    const eq = new URLSearchParams(location.search).get('equipo');
+    if (eq) localStorage.setItem('tl_licencia', eq.trim().toUpperCase());
+  }catch(e){}
+})();
+
+function aplicarRol(){
+  const dueno = esDueno();
+  const tabEq = $('tabEquipo'); if (tabEq) tabEq.style.display = dueno ? '' : 'none';
+  const seg = $('bloqueSeguridad'); if (seg) seg.style.display = dueno ? '' : 'none';
+}
+
 /* ===================== VISTAS ===================== */
 function mostrarLogin(){ $('vistaLogin').style.display='grid'; $('vistaPanel').style.display='none'; }
 
@@ -59,6 +78,8 @@ async function mostrarPanel(){
   pintarModelos();
   pintarProductos();
   pintarPromosPanel();
+  pintarColabs();
+  aplicarRol();
   actualizarBtnBio();
   iniciarVentas();
   // Bienvenida
@@ -71,7 +92,7 @@ function pintarBarra(){
   $('barLogo').innerHTML = esImg(logo) ? `<img src="${logo}">` : escHtml(logo||'🛍️');
   $('barNombre').textContent = cfg('nombre_local','Tienda Libre');
   let u=''; try { u=(obtenerLicencia()||{}).usuario||''; } catch(e){}
-  $('barUser').textContent = u ? ('@'+u) : '';
+  $('barUser').textContent = esDueno() ? (u ? ('@'+u) : '') : ('👤 '+nombreUsuario());
   const d = diasRestantes();
   const chip = $('barLic');
   if (d===null){ chip.textContent='—'; chip.className='chip v'; }
@@ -113,7 +134,6 @@ function abrirProd(id){
   $('prodCat').value    = p ? (p.cat||'') : '';
   $('prodMarca').value  = p ? (p.marca||'') : '';
   $('prodPrecio').value = p ? (p.precio||'') : '';
-  $('prodCodbar').value = p ? (p.codigobarras||'') : '';
   $('prodDesc').value   = p ? (p.desc||'') : '';
   $('prodUlt').checked  = p ? !!p.ultimos : false;
   imagenProd = p ? (p.imagen||'') : '';
@@ -146,7 +166,6 @@ function guardarProd(){
     cat: $('prodCat').value.trim(),
     marca: $('prodMarca').value.trim(),
     precio: parseFloat($('prodPrecio').value) || 0,
-    codigobarras: $('prodCodbar').value.trim(),
     desc: $('prodDesc').value.trim(),
     imagen: imagenProd || '',
     ultimos: $('prodUlt').checked,
@@ -286,6 +305,81 @@ function eliminarPromo(id){
   toast('Promo eliminada');
 }
 
+/* ===================== COLABORADORES (equipo) ===================== */
+let colabEdit = null;
+function getColabs(){ try{ return JSON.parse(localStorage.getItem('colaboradores')||'[]'); }catch(e){ return []; } }
+function setColabs(a){ localStorage.setItem('colaboradores', JSON.stringify(a)); }
+function _enc(s){ try{ return btoa(unescape(encodeURIComponent(s))); }catch(e){ return s; } }
+function _dec(s){ try{ return decodeURIComponent(escape(atob(s||''))); }catch(e){ return ''; } }
+
+function pintarColabs(){
+  const arr = getColabs();
+  const cont = $('listaColabs');
+  if(!arr.length){
+    cont.innerHTML = `<div class="empty"><span class="e">👥</span>Todavía no agregaste colaboradores.</div>`;
+  } else {
+    cont.innerHTML = arr.map(c=>`
+      <div class="promo-li">
+        <div class="sw" style="background:linear-gradient(135deg,#7a5bf0,#5b8bf0)">${escHtml((c.nombre||'?').slice(0,1).toUpperCase())}</div>
+        <div class="pi"><div class="t">${escHtml(c.nombre||'')}</div><div class="d">usuario: ${escHtml(c.usuario||'')}</div></div>
+        <div class="prod-actions">
+          <button class="btn btn-ghost btn-sm" data-editcolab="${c.id}">✏️</button>
+          <button class="btn btn-bad btn-sm" data-delcolab="${c.id}">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+  const codigo = _tlCodigo();
+  if(codigo){
+    const base = location.origin + location.pathname.replace(/[^/]*$/, 'admin.html');
+    $('colabLink').textContent = base + '?equipo=' + encodeURIComponent(codigo);
+    $('colabLinkBox').style.display = arr.length ? 'block' : 'none';
+  }
+}
+function abrirColab(id){
+  colabEdit = id || null;
+  const c = id ? getColabs().find(x=>x.id===id) : null;
+  $('colabModalTit').textContent = c ? 'Editar colaborador' : 'Nuevo colaborador';
+  $('colabNombre').value = c ? (c.nombre||'') : '';
+  $('colabUser').value   = c ? (c.usuario||'') : '';
+  $('colabPass').value   = c ? _dec(c.pass) : '';
+  $('colabErr').textContent = '';
+  abrir('ovColab');
+}
+function guardarColab(){
+  const nombre = $('colabNombre').value.trim();
+  const usuario = $('colabUser').value.trim().toLowerCase();
+  const pass = $('colabPass').value;
+  const err = $('colabErr');
+  if(!nombre || !usuario || !pass){ err.textContent='Completá nombre, usuario y contraseña.'; return; }
+  let arr = getColabs();
+  if(arr.some(c=>c.usuario===usuario && c.id!==colabEdit)){ err.textContent='Ya hay un colaborador con ese usuario.'; return; }
+  const colab = { id: colabEdit || ('c'+Date.now().toString(36)), nombre, usuario, pass:_enc(pass) };
+  if(colabEdit) arr = arr.map(c=>c.id===colabEdit?colab:c);
+  else arr.unshift(colab);
+  setColabs(arr);
+  cerrarTodo(); pintarColabs();
+  toast(colabEdit?'✅ Colaborador actualizado':'✅ Colaborador agregado');
+}
+function eliminarColab(id){
+  if(!confirm('¿Eliminar este colaborador?')) return;
+  setColabs(getColabs().filter(c=>c.id!==id));
+  pintarColabs();
+  toast('Colaborador eliminado');
+}
+async function validarColaborador(user, pass){
+  const codigo = _tlCodigo(); if(!codigo) return null;
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+    if(!res.ok) return null;
+    const rows = await res.json();
+    let colabs = [];
+    if(rows && rows.length && rows[0].datos){ try{ colabs = JSON.parse(rows[0].datos.colaboradores||'[]'); }catch(e){} }
+    const u = String(user).trim().toLowerCase();
+    return colabs.find(c => (c.usuario||'').toLowerCase()===u && _dec(c.pass)===pass) || null;
+  }catch(e){ console.warn('validar colab:', e); return null; }
+}
+
 /* ===================== QR / COMPARTIR ===================== */
 function abrirQR(){
   const link = getLinkTienda();
@@ -384,6 +478,7 @@ function pintarVentas(){
       <div class="vc-cli">👤 <b>${escHtml((v.cliente&&v.cliente.nombre)||'')}</b> · ${telLink} · <span style="color:var(--muted)">${via}</span></div>
       <div class="vc-items">${items}</div>
       <div class="vc-foot"><span class="vc-total">Total: <b>${formatPrecio(v.total)}</b></span><span class="vc-fecha">${fmtFechaCorta(v.fecha)}</span></div>
+      ${v.atendidoPor?`<div class="vc-fecha" style="margin-top:4px">✅ Atendido por <b>${escHtml(v.atendidoPor)}</b></div>`:''}
       <div class="vc-acc">${acc}</div>
     </div>`;
   }).join('');
@@ -392,7 +487,8 @@ function pintarVentas(){
 async function cambiarEstadoVenta(id, estado){
   const codigo = _tlCodigo();
   if (!codigo) return;
-  ventasCache = ventasCache.map(v=>v.id===id?Object.assign({}, v, {estado}):v);
+  const quien = nombreUsuario();
+  ventasCache = ventasCache.map(v=>v.id===id?Object.assign({}, v, {estado, atendidoPor:quien}):v);
   pintarVentas(); actualizarBadgeVentas();
   try{
     const res = await fetch(
@@ -402,7 +498,7 @@ async function cambiarEstadoVenta(id, estado){
     if (res.ok){ const rows = await res.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
     let ventas = [];
     try{ ventas = JSON.parse(datos.ventas || '[]'); }catch(e){ ventas = []; }
-    ventas = ventas.map(v=>v.id===id?Object.assign({}, v, {estado}):v);
+    ventas = ventas.map(v=>v.id===id?Object.assign({}, v, {estado, atendidoPor:quien}):v);
     datos.ventas = JSON.stringify(ventas);
     await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method:'POST',
@@ -420,39 +516,7 @@ function iniciarVentas(){
 
 /* ===================== MODALES ===================== */
 function abrir(id){ $(id).classList.add('show'); document.body.style.overflow='hidden'; }
-function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; detenerScanner(); }
-
-/* ===================== ESCÁNER DE CÓDIGO DE BARRAS ===================== */
-let _scanner = null, _scanRun = false;
-async function abrirScanner(){
-  abrir('ovScan');
-  $('scanMsg').textContent = '';
-  if (typeof Html5Qrcode === 'undefined'){ $('scanMsg').textContent = 'No se pudo cargar el lector. Revisá tu conexión e intentá de nuevo.'; return; }
-  try{
-    let fmts;
-    if (window.Html5QrcodeSupportedFormats){
-      const F = Html5QrcodeSupportedFormats;
-      fmts = [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.QR_CODE];
-    }
-    _scanner = new Html5Qrcode('scanBox', fmts ? { formatsToSupport: fmts } : undefined);
-    _scanRun = true;
-    await _scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{width:260,height:160} },
-      (txt)=>{ $('prodCodbar').value = txt; toast('✅ Código: '+txt); cerrarScanner(); },
-      ()=>{});
-  }catch(e){
-    console.warn('scan:', e); _scanRun = false;
-    $('scanMsg').textContent = 'No pudimos abrir la cámara. Dale permiso de cámara al navegador y probá de nuevo.';
-  }
-}
-async function detenerScanner(){
-  if (_scanner && _scanRun){
-    _scanRun = false;
-    try{ await _scanner.stop(); }catch(e){}
-    try{ _scanner.clear(); }catch(e){}
-    _scanner = null;
-  }
-}
-function cerrarScanner(){ $('ovScan').classList.remove('show'); detenerScanner(); }
+function cerrarTodo(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); document.body.style.overflow=''; }
 
 /* ===================== SEGURIDAD (huella / PIN del celular) ===================== */
 function bioDisponible(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
@@ -510,7 +574,13 @@ async function toggleBio(){
 /* ===================== EVENTOS ===================== */
 $('loginBtn').addEventListener('click', async ()=>{
   const u=$('loginUser').value, p=$('loginPass').value;
-  if (!loginAdmin(u,p)){
+  let rol=null, nombre='';
+  if (loginAdmin(u,p)) { rol='dueno'; nombre='Dueño'; }
+  else {
+    const c = await validarColaborador(u,p);
+    if (c){ rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true'); }
+  }
+  if (!rol){
     const e=$('loginErr'); e.textContent='⚠️ Usuario o contraseña incorrectos.'; e.style.display='block'; $('loginPass').value=''; return;
   }
   if (bioActivado()){
@@ -520,6 +590,8 @@ $('loginBtn').addEventListener('click', async ()=>{
       const e=$('loginErr'); e.textContent='🔒 No se pudo verificar tu huella/PIN. Probá de nuevo.'; e.style.display='block'; return;
     }
   }
+  sessionStorage.setItem('tl_rol', rol);
+  sessionStorage.setItem('tl_user', nombre);
   mostrarPanel();
 });
 $('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginBtn').click(); });
@@ -576,12 +648,14 @@ $('btnQR').addEventListener('click', abrirQR);
 $('btnQRDesc').addEventListener('click', descargarQR);
 $('btnQRCopy').addEventListener('click', copiarLink);
 $('btnBio').addEventListener('click', toggleBio);
-$('btnScan').addEventListener('click', abrirScanner);
-$('btnScanCancel').addEventListener('click', cerrarScanner);
-$('btnScanClose').addEventListener('click', cerrarScanner);
+$('btnAddColab').addEventListener('click', ()=>abrirColab(null));
+$('btnGuardarColab').addEventListener('click', guardarColab);
+$('btnCopyColabLink').addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText($('colabLink').textContent); toast('🔗 Link del equipo copiado'); }
+  catch(e){ toast('Copialo del texto de arriba 🙂'); }
+});
 
 document.addEventListener('click', e=>{
-  if (e.target.id === 'ovScan') { cerrarScanner(); return; }
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
   if (e.target.classList.contains('overlay')) { cerrarTodo(); return; }
   const tab=e.target.closest('.tab');
@@ -590,6 +664,8 @@ document.addEventListener('click', e=>{
     if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
     return; }
   const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
+  const ec=e.target.closest('[data-editcolab]'); if(ec){ abrirColab(ec.dataset.editcolab); return; }
+  const dc=e.target.closest('[data-delcolab]'); if(dc){ eliminarColab(dc.dataset.delcolab); return; }
   const epr=e.target.closest('[data-editpromo]'); if(epr){ abrirPromo(epr.dataset.editpromo); return; }
   const dpr=e.target.closest('[data-delpromo]'); if(dpr){ eliminarPromo(dpr.dataset.delpromo); return; }
   const sw=e.target.closest('[data-swatch]'); if(sw){ promoColor=sw.dataset.swatch; renderSwatches(); renderPromoPreview(); return; }
@@ -602,6 +678,6 @@ document.addEventListener('click', e=>{
 
 /* ===================== INIT ===================== */
 (function init(){
-  if (isAdminLogged() && verificarLicencia()) mostrarPanel();
+  if (isAdminLogged() && (rolActual()==='colab' || verificarLicencia())) mostrarPanel();
   else mostrarLogin();
 })();
