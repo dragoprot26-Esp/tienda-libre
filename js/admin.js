@@ -357,7 +357,7 @@ function abrirColab(id){
   $('colabErr').textContent = '';
   abrir('ovColab');
 }
-function guardarColab(){
+async function guardarColab(){
   const nombre = $('colabNombre').value.trim();
   const usuario = $('colabUser').value.trim().toLowerCase();
   const pass = $('colabPass').value;
@@ -365,7 +365,9 @@ function guardarColab(){
   if(!nombre || !usuario || !pass){ err.textContent='Completá nombre, usuario y contraseña.'; return; }
   let arr = getColabs();
   if(arr.some(c=>c.usuario===usuario && c.id!==colabEdit)){ err.textContent='Ya hay un colaborador con ese usuario.'; return; }
-  const colab = { id: colabEdit || ('c'+Date.now().toString(36)), nombre, usuario, pass:_enc(pass) };
+  const tenant = _tlCodigo() || '';
+  const hash = (typeof tlHash==='function') ? await tlHash(pass, 'colab:'+usuario+':'+tenant) : null;
+  const colab = { id: colabEdit || ('c'+Date.now().toString(36)), nombre, usuario, pass: hash || _enc(pass) };
   if(colabEdit) arr = arr.map(c=>c.id===colabEdit?colab:c);
   else arr.unshift(colab);
   setColabs(arr);
@@ -390,7 +392,16 @@ async function validarColaborador(user, pass){
     let colabs = [];
     if(rows && rows.length && rows[0].datos){ try{ colabs = JSON.parse(rows[0].datos.colaboradores||'[]'); }catch(e){} }
     const u = String(user).trim().toLowerCase();
-    return colabs.find(c => (c.usuario||'').toLowerCase()===u && _dec(c.pass)===pass) || null;
+    for (const c of colabs){
+      if ((c.usuario||'').toLowerCase() !== u) continue;
+      if (_esHash(c.pass)) {
+        const h = await tlHash(pass, 'colab:'+(c.usuario||'')+':'+codigo);
+        if (h !== null && h === c.pass) return c;
+      } else {
+        if (_dec(c.pass) === pass) return c;   // legado base64 (sigue funcionando)
+      }
+    }
+    return null;
   }catch(e){ console.warn('validar colab:', e); return null; }
 }
 
@@ -636,7 +647,7 @@ async function toggleBio(){
 $('loginBtn').addEventListener('click', async ()=>{
   const u=$('loginUser').value, p=$('loginPass').value;
   let rol=null, nombre='';
-  if (loginAdmin(u,p)) { rol='dueno'; nombre='Dueño'; }
+  if (await loginAdmin(u,p)) { rol='dueno'; nombre='Dueño'; }
   else {
     const c = await validarColaborador(u,p);
     if (c){ rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true'); }
