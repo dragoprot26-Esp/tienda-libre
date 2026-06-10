@@ -355,21 +355,71 @@ function abrirColab(id){
   $('colabModalTit').textContent = c ? 'Editar colaborador' : 'Nuevo colaborador';
   $('colabNombre').value = c ? (c.nombre||'') : '';
   $('colabUser').value   = c ? (c.usuario||'') : '';
-  $('colabPass').value   = c ? _dec(c.pass) : '';
+  $('colabPass').value   = '';
+  $('colabPass').type    = 'password';
+  const hint = $('colabPassHint');
+  if (hint) hint.textContent = c
+    ? 'Dejá la contraseña en blanco para no cambiarla.'
+    : 'Mínimo 6 caracteres. Evitá "1234" o el mismo usuario.';
+  pintarFuerzaPass();
   $('colabErr').textContent = '';
   abrir('ovColab');
+}
+const _PASS_DEBILES = ['1234','12345','123456','1234567','12345678','0000','00000','000000','1111','111111','password','passw0rd','contraseña','contrasena','qwerty','asdfgh','admin','abc123','123123','654321','tienda','sofia'];
+function claveFuerte(pass, usuario){
+  const p = String(pass||'');
+  if (p.length < 6) return { ok:false, msg:'La contraseña debe tener al menos 6 caracteres.' };
+  if (/^(.)\1+$/.test(p)) return { ok:false, msg:'Evitá repetir el mismo carácter (ej: "aaaaaa").' };
+  if (/^(?:0123456789|123456789|123456|1234567|abcdefg?|qwerty)/i.test(p)) return { ok:false, msg:'Evitá secuencias como "123456" o "qwerty".' };
+  if (_PASS_DEBILES.includes(p.toLowerCase())) return { ok:false, msg:'Esa contraseña es muy común. Elegí otra más difícil.' };
+  if (usuario && p.toLowerCase() === String(usuario).toLowerCase()) return { ok:false, msg:'La contraseña no puede ser igual al usuario.' };
+  return { ok:true, msg:'' };
+}
+function _scorePass(p){
+  let s = 0;
+  if (p.length >= 6) s++;
+  if (p.length >= 10) s++;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^A-Za-z0-9]/.test(p)) s++;
+  return Math.min(s, 4);
+}
+function pintarFuerzaPass(){
+  const bar = $('colabPassBar'); if(!bar) return;
+  const p = $('colabPass').value || '';
+  const sc = _scorePass(p);
+  const pct = [10,30,55,80,100][sc];
+  const col = ['#dc2626','#dc2626','#d97706','#16a34a','#16a34a'][sc];
+  bar.style.width = (p ? pct : 0) + '%';
+  bar.style.background = col;
 }
 async function guardarColab(){
   const nombre = $('colabNombre').value.trim();
   const usuario = $('colabUser').value.trim().toLowerCase();
   const pass = $('colabPass').value;
   const err = $('colabErr');
-  if(!nombre || !usuario || !pass){ err.textContent='Completá nombre, usuario y contraseña.'; return; }
+  if(!nombre || !usuario){ err.textContent='Completá nombre y usuario.'; return; }
   let arr = getColabs();
   if(arr.some(c=>c.usuario===usuario && c.id!==colabEdit)){ err.textContent='Ya hay un colaborador con ese usuario.'; return; }
-  const tenant = _tlCodigo() || '';
-  const hash = (typeof tlHash==='function') ? await tlHash(pass, 'colab:'+usuario+':'+tenant) : null;
-  const colab = { id: colabEdit || ('c'+Date.now().toString(36)), nombre, usuario, pass: hash || _enc(pass) };
+
+  const editando = !!colabEdit;
+  const existente = editando ? arr.find(c=>c.id===colabEdit) : null;
+  let passField;
+
+  if (pass) {
+    const fuerte = claveFuerte(pass, usuario);
+    if(!fuerte.ok){ err.textContent = fuerte.msg; return; }
+    const tenant = _tlCodigo() || '';
+    const hash = (typeof tlHash==='function') ? await tlHash(pass, 'colab:'+usuario+':'+tenant) : null;
+    passField = hash || _enc(pass);
+  } else if (editando && existente) {
+    if (existente.usuario !== usuario){ err.textContent='Cambiaste el usuario: volvé a escribir la contraseña.'; return; }
+    passField = existente.pass;   // mantener la actual
+  } else {
+    err.textContent='Poné una contraseña (mínimo 6 caracteres).'; return;
+  }
+
+  const colab = { id: colabEdit || ('c'+Date.now().toString(36)), nombre, usuario, pass: passField };
   if(colabEdit) arr = arr.map(c=>c.id===colabEdit?colab:c);
   else arr.unshift(colab);
   setColabs(arr);
@@ -724,6 +774,10 @@ $('btnQRCopy').addEventListener('click', copiarLink);
 $('btnBio').addEventListener('click', toggleBio);
 $('btnAddColab').addEventListener('click', ()=>abrirColab(null));
 $('btnGuardarColab').addEventListener('click', guardarColab);
+$('colabPass').addEventListener('input', pintarFuerzaPass);
+$('colabPassEye').addEventListener('click', ()=>{
+  const i=$('colabPass'); i.type = (i.type==='password') ? 'text' : 'password';
+});
 $('btnCopyColabLink').addEventListener('click', async ()=>{
   try{ await navigator.clipboard.writeText($('colabLink').textContent); toast('🔗 Link del equipo copiado'); }
   catch(e){ toast('Copialo del texto de arriba 🙂'); }
