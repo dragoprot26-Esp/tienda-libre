@@ -705,19 +705,34 @@ async function toggleBio(){
 $('loginBtn').addEventListener('click', async ()=>{
   const u=$('loginUser').value, p=$('loginPass').value;
   let rol=null, nombre='';
-  if (await loginAdmin(u,p)) {
-    rol='dueno'; nombre='Dueño';
-    try { await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, _tlCodigo()); }
-    catch(e){ console.warn('cuenta segura:', e); }
-  }
-  else {
-    const c = await validarColaborador(u,p);
-    if (c){
-      rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true');
-      try { await asegurarCuentaSeguraColab(c.usuario, p, _tlCodigo()); }
-      catch(e){ console.warn('cuenta colab:', e); }
+  const tenant = _tlCodigo();
+
+  // 1) Intentar por la cuenta segura (Supabase Auth)
+  try {
+    const sess = await authSignIn(_emailDe(u, tenant), p);
+    if (sess){
+      const m = await miMembresia();
+      if (m){ rol = m.rol; nombre = (m.rol==='dueno' ? 'Dueño' : (m.usuario||u)); }
+      else { authSignOut(); }   // sesión sin membresía: no la usamos
+    }
+  } catch(e){ console.warn('login seguro:', e); }
+
+  // 2) Fallback al método anterior (primera vez / puerta abierta), que crea la cuenta
+  if (!rol){
+    if (await loginAdmin(u,p)) {
+      rol='dueno'; nombre='Dueño';
+      try { await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, tenant); }
+      catch(e){ console.warn('cuenta segura:', e); }
+    } else {
+      const c = await validarColaborador(u,p);
+      if (c){
+        rol='colab'; nombre=c.nombre||c.usuario;
+        try { await asegurarCuentaSeguraColab(c.usuario, p, tenant); }
+        catch(e){ console.warn('cuenta colab:', e); }
+      }
     }
   }
+  if (rol) sessionStorage.setItem('tl_logged','true');
   if (!rol){
     const e=$('loginErr'); e.textContent='⚠️ Usuario o contraseña incorrectos.'; e.style.display='block'; $('loginPass').value=''; return;
   }
