@@ -128,6 +128,18 @@ async function cambiarClaveDueno(actual, nueva){
   return { ok:true };
 }
 
+/* Crea/entra a la cuenta segura del AYUDANTE y lo une a la tienda */
+async function asegurarCuentaSeguraColab(usuario, password, codigo){
+  if(!usuario || !password || !codigo) return { ok:false, msg:'Faltan datos' };
+  const email = _emailDe(usuario, codigo);
+  let sess = await authSignIn(email, password);
+  if (!sess){ await authSignUp(email, password); sess = await authSignIn(email, password); }
+  if (!sess) return { ok:false, msg:'No se pudo crear la cuenta del ayudante (la clave debe tener 6+).' };
+  try { await sbRPC('unirse_como_colab', { p_codigo: codigo, p_usuario: usuario, p_pass: password }); }
+  catch(e){ return { ok:false, msg:'Cuenta creada, pero no se pudo unir: ' + (e.message||e) }; }
+  return { ok:true };
+}
+
 /* =====================================================================
    SYNC MULTI-INQUILINO — 1 fila por local. Tabla: tiendalibre_backups
    ===================================================================== */
