@@ -425,6 +425,11 @@ async function guardarColab(){
   else arr.unshift(colab);
   setColabs(arr);
   if (typeof tlNubeGuardar === 'function') tlNubeGuardar();   // subir YA (no esperar el retardo)
+  // Si se puso/cambió la clave, sincronizamos la cuenta segura del ayudante
+  if (pass) {
+    try { await sbRPC('resetear_clave_colab', { p_usuario: usuario, p_pass: pass }); }
+    catch(e){ console.warn('reset clave colab:', e); }
+  }
   cerrarTodo(); pintarColabs();
   toast(colabEdit?'✅ Colaborador actualizado':'✅ Colaborador agregado');
 }
@@ -707,7 +712,11 @@ $('loginBtn').addEventListener('click', async ()=>{
   }
   else {
     const c = await validarColaborador(u,p);
-    if (c){ rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true'); }
+    if (c){
+      rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true');
+      try { await asegurarCuentaSeguraColab(c.usuario, p, _tlCodigo()); }
+      catch(e){ console.warn('cuenta colab:', e); }
+    }
   }
   if (!rol){
     const e=$('loginErr'); e.textContent='⚠️ Usuario o contraseña incorrectos.'; e.style.display='block'; $('loginPass').value=''; return;
