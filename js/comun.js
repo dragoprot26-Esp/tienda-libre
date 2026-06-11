@@ -95,6 +95,39 @@ async function asegurarCuentaSeguraDueno(usuario, password, codigo){
   return { ok:true, email };
 }
 
+/* Verifica la contraseña actual del dueño contra lo guardado (hash o base64) */
+async function verificarClaveDueno(pass){
+  const u = localStorage.getItem('admin_user');
+  const stored = localStorage.getItem('admin_pass');
+  if(!stored) return false;
+  if(_esHash(stored)){ const h = await tlHash(pass, 'owner:'+(u||'')); return h!==null && h===stored; }
+  let p=''; try{ p=atob(stored); }catch(e){ p=''; }
+  return pass===p;
+}
+
+/* Cambia la contraseña del dueño en Supabase Y en este dispositivo */
+async function cambiarClaveDueno(actual, nueva){
+  const u = localStorage.getItem('admin_user') || '';
+  const codigo = _tlCodigo();
+  if(!(await verificarClaveDueno(actual))) return { ok:false, msg:'La contraseña actual no es correcta.' };
+  // Aseguramos una sesión válida (usando la clave actual)
+  let tok = await authToken();
+  if(!tok){ await asegurarCuentaSeguraDueno(u, actual, codigo); tok = await authToken(); }
+  if(!tok) return { ok:false, msg:'No se pudo acceder a tu cuenta segura. Iniciá sesión y reintentá.' };
+  // Cambiar en Supabase
+  const res = await fetch(`${SB_URL}/auth/v1/user`, {
+    method:'PUT',
+    headers:{ apikey:SB_KEY, Authorization:'Bearer '+tok, 'Content-Type':'application/json' },
+    body: JSON.stringify({ password: nueva })
+  });
+  if(!res.ok){ const t=await res.text(); return { ok:false, msg:'El servidor rechazó el cambio: '+t.slice(0,120) }; }
+  // Refrescar sesión con la nueva clave + actualizar el hash local
+  await authSignIn(_emailDe(u, codigo), nueva);
+  const h = await tlHash(nueva, 'owner:'+u);
+  if(h) localStorage.setItem('admin_pass', h);
+  return { ok:true };
+}
+
 /* =====================================================================
    SYNC MULTI-INQUILINO — 1 fila por local. Tabla: tiendalibre_backups
    ===================================================================== */
