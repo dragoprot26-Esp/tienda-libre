@@ -492,6 +492,127 @@ async function copiarLink(){
   catch(e){ toast('Copialo desde el texto de arriba 🙂'); }
 }
 
+/* ===================== EXPORTAR / ARCHIVAR VENTAS ===================== */
+let _archivoHecho = false;
+
+function cargarScript(url){
+  return new Promise((res, rej)=>{
+    if (document.querySelector('script[data-src="'+url+'"]')) return res();
+    const s = document.createElement('script');
+    s.src = url; s.dataset.src = url;
+    s.onload = ()=>res(); s.onerror = ()=>rej(new Error('No se pudo cargar '+url));
+    document.head.appendChild(s);
+  });
+}
+function _descargar(blob, nombre){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+function _ventaItemsTxt(v){
+  if(!Array.isArray(v.items)) return '';
+  return v.items.map(it=>{
+    const n = it.nombre||it.titulo||'item';
+    const q = it.cantidad||it.cant||1;
+    return (q>1 ? q+'x ' : '') + n;
+  }).join(' · ');
+}
+const _VENTA_HEAD = ['Código','Fecha','Cliente','Teléfono','Contacto','Productos','Total','Estado','Vendedor'];
+function _ventaFila(v){
+  const c = v.cliente||{};
+  return [
+    v.codigo||'', fmtFechaCorta(v.fecha), c.nombre||'', c.telefono||'',
+    (c.via==='email' ? (c.email||'') : 'WhatsApp'),
+    _ventaItemsTxt(v), Number(v.total)||0, v.estado||'pendiente', v.atendidoPor||''
+  ];
+}
+function _filasVentas(lista){
+  return (lista||ventasCache).slice().sort((a,b)=>(b.fecha||0)-(a.fecha||0)).map(_ventaFila);
+}
+function _csv(filas){
+  const esc = s => '"' + String(s==null?'':s).replace(/"/g,'""') + '"';
+  const out = [ _VENTA_HEAD.map(esc).join(',') ];
+  filas.forEach(f=>out.push(f.map(esc).join(',')));
+  return '\ufeff' + out.join('\r\n');     // BOM para acentos en Excel
+}
+function _hoy(){ return new Date().toISOString().slice(0,10); }
+
+function exportarVentasCSV(){
+  const filas = _filasVentas();
+  if (!filas.length){ toast('No hay ventas para exportar'); return; }
+  _descargar(new Blob([_csv(filas)], {type:'text/csv;charset=utf-8'}), 'ventas-'+_hoy()+'.csv');
+  toast('📊 Planilla descargada');
+}
+async function exportarVentasPDF(){
+  const filas = _filasVentas();
+  if (!filas.length){ toast('No hay ventas para exportar'); return; }
+  toast('Generando PDF…');
+  try{
+    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape' });
+    doc.setFontSize(14); doc.text(cfg('nombre_local','Tienda Libre') + ' — Ventas', 14, 14);
+    doc.setFontSize(9);  doc.text('Generado: ' + new Date().toLocaleString(), 14, 20);
+    doc.autoTable({
+      head:[_VENTA_HEAD],
+      body: filas.map(f=>f.map((x,i)=> i===6 ? formatPrecio(x) : x)),
+      startY: 26, styles:{ fontSize:8, cellPadding:2 }, headStyles:{ fillColor:[91,91,240] }
+    });
+    doc.save('ventas-'+_hoy()+'.pdf');
+    toast('📄 PDF descargado');
+  }catch(e){ console.warn('pdf:', e); toast('⚠️ No se pudo generar el PDF'); }
+}
+async function archivarEntregados(){
+  const entregados = ventasCache.filter(v=>v.estado==='entregado');
+  if (!entregados.length){ toast('No hay entregados para archivar'); return; }
+  toast('Armando ZIP…');
+  try{
+    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const zip = new window.JSZip();
+    zip.file('entregados-'+_hoy()+'.csv', _csv(_filasVentas(entregados)));
+    const total = entregados.reduce((s,v)=>s+(Number(v.total)||0),0);
+    zip.file('resumen.txt',
+      'Tienda: '+cfg('nombre_local','Tienda Libre')+'\n'+
+      'Fecha de archivo: '+new Date().toLocaleString()+'\n'+
+      'Entregados archivados: '+entregados.length+'\n'+
+      'Total vendido: '+formatPrecio(total)+'\n');
+    const blob = await zip.generateAsync({ type:'blob' });
+    _descargar(blob, 'archivo-ventas-'+_hoy()+'.zip');
+    _archivoHecho = true;
+    const bv = $('btnVaciar'); if (bv) bv.disabled = false;
+    toast('📦 Archivo descargado. Ya podés vaciar el historial.');
+  }catch(e){ console.warn('zip:', e); toast('⚠️ No se pudo armar el ZIP'); }
+}
+async function vaciarHistorial(){
+  if (!_archivoHecho){ toast('Primero archivá (descargá el ZIP)'); return; }
+  if (!confirm('¿Vaciar el historial de entregados? Quedará el respaldo que descargaste. Esto no se puede deshacer.')) return;
+  const codigo = _tlCodigo(); if(!codigo) return;
+  const bearer = (await authToken()) || SB_KEY;
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+bearer } });
+    let datos = {};
+    if(res.ok){ const rows = await res.json(); if(rows && rows.length && rows[0].datos) datos = rows[0].datos; }
+    let ventas = [];
+    try{ ventas = JSON.parse(datos.ventas || '[]'); }catch(e){ ventas = []; }
+    ventas = ventas.filter(v=>v.estado!=='entregado');
+    datos.ventas = JSON.stringify(ventas);
+    await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+      method:'POST',
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+bearer, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+      body: JSON.stringify({ tenant_id:codigo, datos, updated_at:new Date().toISOString() })
+    });
+    _archivoHecho = false;
+    const bv = $('btnVaciar'); if(bv) bv.disabled = true;
+    const pop = $('histPop'); if(pop) pop.classList.remove('show');
+    toast('🗑️ Historial vaciado');
+    refrescarVentasNube();
+  }catch(e){ console.warn('vaciar:', e); toast('⚠️ No se pudo vaciar'); }
+}
+
 /* ===================== VENTAS ===================== */
 let ventasCache = [];
 let _ventasIds = null;     // Set de ids conocidos (null = primera carga, no avisar)
@@ -506,10 +627,11 @@ function fmtFechaCorta(ts){
 async function refrescarVentasNube(){
   const codigo = _tlCodigo();
   if (!codigo) return;
+  const bearer = (await authToken()) || SB_KEY;
   try{
     const res = await fetch(
       `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
-      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+bearer } });
     if (!res.ok) return;
     const rows = await res.json();
     let ventas = [];
@@ -620,10 +742,11 @@ async function cambiarEstadoVenta(id, estado){
   const quien = nombreUsuario();
   ventasCache = ventasCache.map(v=>v.id===id?Object.assign({}, v, {estado, atendidoPor:quien}):v);
   pintarVentas(); actualizarBadgeVentas();
+  const bearer = (await authToken()) || SB_KEY;
   try{
     const res = await fetch(
       `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
-      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+bearer } });
     let datos = {};
     if (res.ok){ const rows = await res.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
     let ventas = [];
@@ -632,7 +755,7 @@ async function cambiarEstadoVenta(id, estado){
     datos.ventas = JSON.stringify(ventas);
     await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method:'POST',
-      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+bearer, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
       body: JSON.stringify({ tenant_id:codigo, datos, updated_at:new Date().toISOString() })
     });
   }catch(e){ console.warn('estado venta:', e); toast('⚠️ No se pudo guardar el cambio'); }
@@ -791,6 +914,15 @@ $('btnVista').addEventListener('click', ()=>{
 });
 $('btnSalir').addEventListener('click', logoutAdmin);
 $('btnRefVentas').addEventListener('click', refrescarVentasNube);
+$('btnExpCSV').addEventListener('click', exportarVentasCSV);
+$('btnExpPDF').addEventListener('click', exportarVentasPDF);
+{
+  const bMas=$('btnHistMas'), bArch=$('btnArchivar'), bVac=$('btnVaciar'), pop=$('histPop'), menu=$('histMenu');
+  if(bMas) bMas.addEventListener('click', e=>{ e.stopPropagation(); pop.classList.toggle('show'); });
+  if(bArch) bArch.addEventListener('click', ()=>{ pop.classList.remove('show'); archivarEntregados(); });
+  if(bVac) bVac.addEventListener('click', vaciarHistorial);
+  document.addEventListener('click', e=>{ if(pop && pop.classList.contains('show') && menu && !menu.contains(e.target)) pop.classList.remove('show'); });
+}
 $('btnAddPromo').addEventListener('click', ()=>abrirPromo(null));
 $('btnGuardarPromo').addEventListener('click', guardarPromo);
 ['promoEmoji','promoEtq','promoTit','promoDesc'].forEach(id=>$(id).addEventListener('input', renderPromoPreview));
