@@ -56,6 +56,16 @@ try{ var _ta=localStorage.getItem('tl_admin_tema'); if(_ta && _ta!=='claro') doc
 .pass-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:transparent;width:36px;height:36px;font-size:1.05rem;cursor:pointer;padding:0}
 .pass-meter{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:8px}
 .pass-meter span{display:block;height:100%;width:0;border-radius:999px;background:var(--bad);transition:width .2s,background .2s}
+/* menú + del historial (solo PC) */
+.hist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px}
+.histmenu{position:relative}
+.histmenu-pop{position:absolute;right:0;top:46px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60;min-width:200px}
+.histmenu-pop.show{display:block}
+.histmenu-pop button{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--ink);padding:11px 12px;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+.histmenu-pop button:hover:not(:disabled){background:var(--surface-2)}
+.histmenu-pop button:disabled{color:var(--muted);cursor:not-allowed}
+.histmenu-pop button#btnVaciar:not(:disabled){color:var(--bad)}
+@media (max-width:819px){ .histmenu{display:none} }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh}
 h1,h2,h3,.disp{font-family:'Fraunces',serif;letter-spacing:-.01em}
@@ -255,6 +265,10 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
         <button class="btn btn-ghost btn-sm" id="btnRefVentas">↻ Actualizar</button>
       </div>
       <p class="hint" style="margin-bottom:10px">Se actualiza solo cada pocos segundos. Marcá cada encargo cuando esté listo o entregado.</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-soft btn-sm" id="btnExpCSV">📊 Planilla</button>
+        <button class="btn btn-soft btn-sm" id="btnExpPDF">📄 PDF</button>
+      </div>
       <div id="listaVentas"></div>
     </section>
 
@@ -269,7 +283,16 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
       <div id="barsDias"></div>
       <h3 class="ctitle">Por vendedor</h3>
       <div id="barsVend"></div>
-      <h3 class="ctitle">Historial de entregados</h3>
+      <div class="hist-head">
+        <h3 class="ctitle" style="margin:0">Historial de entregados</h3>
+        <div class="histmenu" id="histMenu">
+          <button class="iconbtn" id="btnHistMas" title="Opciones">+</button>
+          <div class="histmenu-pop" id="histPop">
+            <button id="btnArchivar">📦 Archivar (ZIP)</button>
+            <button id="btnVaciar" disabled>🗑️ Vaciar historial</button>
+          </div>
+        </div>
+      </div>
       <div id="histVentas"></div>
     </section>
 
@@ -497,8 +520,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=18"></script>
-<script src="js/licencia.js?v=18"></script>
-<script src="js/admin.js?v=18"></script>
+<script src="js/comun.js?v=19"></script>
+<script src="js/licencia.js?v=19"></script>
+<script src="js/admin.js?v=19"></script>
 </body>
 </html>
