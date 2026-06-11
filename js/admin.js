@@ -777,6 +777,21 @@ $('btnQR').addEventListener('click', abrirQR);
 $('btnQRDesc').addEventListener('click', descargarQR);
 $('btnQRCopy').addEventListener('click', copiarLink);
 $('btnBio').addEventListener('click', toggleBio);
+$('btnCambiarClave').addEventListener('click', async ()=>{
+  const a=$('cpActual').value, n=$('cpNueva').value, n2=$('cpNueva2').value;
+  const err=$('cpErr'); err.textContent='';
+  if(!a || !n){ err.textContent='Completá la contraseña actual y la nueva.'; return; }
+  if(n!==n2){ err.textContent='Las contraseñas nuevas no coinciden.'; return; }
+  const f=claveFuerte(n, localStorage.getItem('admin_user')||'');
+  if(!f.ok){ err.textContent=f.msg; return; }
+  const btn=$('btnCambiarClave'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Cambiando…';
+  try{
+    const r=await cambiarClaveDueno(a, n);
+    if(r.ok){ $('cpActual').value=''; $('cpNueva').value=''; $('cpNueva2').value=''; toast('✅ Contraseña cambiada'); pintarCuentaSegura(); }
+    else err.textContent=r.msg||'No se pudo cambiar.';
+  }catch(e){ err.textContent='Error: '+(e.message||e); }
+  btn.disabled=false; btn.textContent=orig;
+});
 $('btnAddColab').addEventListener('click', ()=>abrirColab(null));
 $('btnGuardarColab').addEventListener('click', guardarColab);
 $('colabPass').addEventListener('input', pintarFuerzaPass);
