@@ -573,11 +573,13 @@ async function cargarTienda(){
   TENANT = codigo;
   document.querySelector('.modelos')?.remove();          // ocultar selector en tienda real
   try{
-    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
-      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
-    const rows = await res.json();
-    if(rows && rows.length && rows[0].datos){
-      const d = rows[0].datos;
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/tienda_publica`, {
+      method:'POST', cache:'no-store',
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_codigo: codigo })
+    });
+    const d = res.ok ? await res.json() : null;
+    if(d){
       TIENDA.nombre    = d.nombre_local || 'Tienda';
       TIENDA.tagline   = d.tagline || '';
       TIENDA.logo      = d.logo || '🛍️';
@@ -769,18 +771,10 @@ async function enviarEmail(venta, detalle){
 async function guardarVentaEnNube(venta){
   if(!TENANT) return;
   try{
-    const res = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(TENANT)}&select=datos&limit=1`,
-      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY } });
-    let datos = {};
-    if(res.ok){ const rows = await res.json(); if(rows && rows.length && rows[0].datos) datos = rows[0].datos; }
-    let ventas = [];
-    try{ ventas = JSON.parse(datos.ventas || '[]'); }catch(e){ ventas = []; }
-    ventas.push(venta);
-    datos.ventas = JSON.stringify(ventas);
-    await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+    await fetch(`${SB_URL}/rest/v1/rpc/agregar_venta`, {
       method:'POST',
-      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
-      body: JSON.stringify({ tenant_id:TENANT, datos, updated_at:new Date().toISOString() })
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_codigo: TENANT, p_venta: venta })
     });
   }catch(e){ console.warn('guardar venta:', e); }
 }
