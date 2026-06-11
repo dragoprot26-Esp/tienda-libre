@@ -140,6 +140,18 @@ async function asegurarCuentaSeguraColab(usuario, password, codigo){
   return { ok:true };
 }
 
+/* Lee la membresía (rol/tienda) del usuario logueado en Supabase */
+async function miMembresia(){
+  const tok = await authToken(); if(!tok) return null;
+  const uid = authUserId(); if(!uid) return null;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/tl_miembros?select=tenant_id,rol,usuario&user_id=eq.${uid}`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+tok } });
+    const rows = r.ok ? await r.json() : [];
+    return (rows && rows.length) ? rows[0] : null;
+  }catch(e){ return null; }
+}
+
 /* =====================================================================
    SYNC MULTI-INQUILINO — 1 fila por local. Tabla: tiendalibre_backups
    ===================================================================== */
