@@ -724,11 +724,11 @@ $('loginBtn').addEventListener('click', async ()=>{
       try { await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, tenant); }
       catch(e){ console.warn('cuenta segura:', e); }
     } else {
-      const c = await validarColaborador(u,p);
-      if (c){
-        rol='colab'; nombre=c.nombre||c.usuario;
-        try { await asegurarCuentaSeguraColab(c.usuario, p, tenant); }
-        catch(e){ console.warn('cuenta colab:', e); }
+      const r = await asegurarCuentaSeguraColab(u, p, tenant);
+      if (r.ok){
+        rol='colab';
+        const m = await miMembresia();
+        nombre = (m && m.usuario) || u;
       }
     }
   }
