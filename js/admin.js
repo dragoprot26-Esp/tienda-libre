@@ -725,6 +725,8 @@ $('loginBtn').addEventListener('click', async ()=>{
 });
 $('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginBtn').click(); });
 $('linkActivar').addEventListener('click', ()=>abrir('ovLic'));
+$('linkRecuperar').addEventListener('click', ()=>abrir('ovRecuperar'));
+$('btnRecActivar').addEventListener('click', ()=>{ cerrarTodo(); abrir('ovLic'); });
 
 $('btnActivar').addEventListener('click', async ()=>{
   const code = $('inputCodigo').value.trim();
