@@ -133,7 +133,15 @@ async function asegurarCuentaSeguraColab(usuario, password, codigo){
   if(!usuario || !password || !codigo) return { ok:false, msg:'Faltan datos' };
   const email = _emailDe(usuario, codigo);
   let sess = await authSignIn(email, password);
-  if (!sess){ await authSignUp(email, password); sess = await authSignIn(email, password); }
+  if (!sess){
+    // Verificamos usuario+clave en el servidor ANTES de crear la cuenta
+    let ok = false;
+    try { ok = await sbRPC('verificar_colab', { p_codigo: codigo, p_usuario: usuario, p_pass: password }); }
+    catch(e){ ok = false; }
+    if (!ok) return { ok:false, msg:'Usuario o contraseña incorrectos.' };
+    await authSignUp(email, password);
+    sess = await authSignIn(email, password);
+  }
   if (!sess) return { ok:false, msg:'No se pudo crear la cuenta del ayudante (la clave debe tener 6+).' };
   try { await sbRPC('unirse_como_colab', { p_codigo: codigo, p_usuario: usuario, p_pass: password }); }
   catch(e){ return { ok:false, msg:'Cuenta creada, pero no se pudo unir: ' + (e.message||e) }; }
