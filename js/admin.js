@@ -90,6 +90,7 @@ async function mostrarPanel(){
   pintarColabs();
   aplicarRol();
   actualizarBtnBio();
+  pintarCuentaSegura();
   iniciarVentas();
   marcarLock();
   resetLockTimer();
@@ -699,7 +700,11 @@ async function toggleBio(){
 $('loginBtn').addEventListener('click', async ()=>{
   const u=$('loginUser').value, p=$('loginPass').value;
   let rol=null, nombre='';
-  if (await loginAdmin(u,p)) { rol='dueno'; nombre='Dueño'; }
+  if (await loginAdmin(u,p)) {
+    rol='dueno'; nombre='Dueño';
+    try { await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, _tlCodigo()); }
+    catch(e){ console.warn('cuenta segura:', e); }
+  }
   else {
     const c = await validarColaborador(u,p);
     if (c){ rol='colab'; nombre=c.nombre||c.usuario; sessionStorage.setItem('tl_logged','true'); }
@@ -822,6 +827,32 @@ function aplicarTemaAdmin(t){
   try{ localStorage.setItem('tl_admin_tema', t||'claro'); }catch(e){}
   marcarTemaAdmin();
   toast('🎨 Tema aplicado');
+}
+
+/* ===================== CUENTA SEGURA (Nivel 2) ===================== */
+async function pintarCuentaSegura(){
+  const box = $('cuentaSeguraBox'); if(!box) return;
+  if (!esDueno()) return;
+  if (!authLogueado()){
+    box.innerHTML = '<span class="hint">⚠️ Tu cuenta segura se activa sola la próxima vez que inicies sesión.</span>';
+    return;
+  }
+  box.innerHTML = '<span class="hint">⏳ Verificando…</span>';
+  try{
+    const tok = await authToken();
+    const uid = authUserId();
+    const r = await fetch(`${SB_URL}/rest/v1/tl_miembros?select=tenant_id,rol,usuario&user_id=eq.${uid}`,
+      { cache:'no-store', headers:{ apikey:SB_KEY, Authorization:'Bearer '+(tok||SB_KEY) } });
+    const rows = r.ok ? await r.json() : [];
+    if (rows && rows.length){
+      const m = rows[0];
+      box.innerHTML = '✅ <b>Cuenta segura activa</b><br><span class="hint">Rol: '+escHtml(m.rol)+' · Tienda: '+escHtml(m.tenant_id)+'</span>';
+    } else {
+      box.innerHTML = '<span class="hint">🟡 Cuenta creada pero sin vincular. Cerrá sesión y volvé a entrar.</span>';
+    }
+  }catch(e){
+    box.innerHTML = '<span class="hint">No se pudo verificar ahora. Reintentá más tarde.</span>';
+  }
 }
 
 /* ===================== AUTO-BLOQUEO POR INACTIVIDAD ===================== */
