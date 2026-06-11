@@ -349,6 +349,18 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
           <div class="hint">Tu acceso ahora es una cuenta real del servidor, ligada a tu tienda. Se activa sola al iniciar sesión.</div>
           <div id="cuentaSeguraBox" style="margin-top:10px"></div>
         </div>
+        <div class="bio-row" style="display:block">
+          <b>🔑 Cambiar mi contraseña</b>
+          <div class="hint">Cambia tu clave para entrar. Se actualiza en el servidor y en este dispositivo.</div>
+          <label style="margin-top:8px">Contraseña actual</label>
+          <input id="cpActual" type="password" placeholder="Tu contraseña de ahora">
+          <label>Nueva contraseña</label>
+          <input id="cpNueva" type="password" placeholder="Mínimo 6 caracteres">
+          <label>Repetir nueva</label>
+          <input id="cpNueva2" type="password" placeholder="Repetí la nueva">
+          <div class="err" id="cpErr"></div>
+          <button class="btn btn-block" id="btnCambiarClave" style="margin-top:12px">🔑 Cambiar contraseña</button>
+        </div>
         <div class="bio-row">
           <div>
             <b>🔒 Bloqueo con huella / PIN</b>
@@ -467,8 +479,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=12"></script>
-<script src="js/licencia.js?v=12"></script>
-<script src="js/admin.js?v=12"></script>
+<script src="js/comun.js?v=13"></script>
+<script src="js/licencia.js?v=13"></script>
+<script src="js/admin.js?v=13"></script>
 </body>
 </html>
