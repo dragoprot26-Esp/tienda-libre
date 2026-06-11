@@ -75,6 +75,18 @@ async function activarLicencia(codigo) {
     localStorage.setItem('admin_pass', _h || btoa(remote.pass_admin));
   }
 
+  // Reactivar = volver al estado de la licencia: limpiamos la sesión vieja
+  // y sincronizamos la clave de la cuenta segura con la de la licencia
+  // (así nunca quedan desincronizadas y se puede volver a cambiar).
+  try { if (typeof authSignOut === 'function') authSignOut(); } catch (e) {}
+  try {
+    if (remote.usuario_admin && remote.pass_admin && typeof sbRPC === 'function') {
+      await sbRPC('sincronizar_clave_dueno', {
+        p_codigo: codigo, p_usuario: remote.usuario_admin, p_pass: remote.pass_admin
+      });
+    }
+  } catch (e) { console.warn('sincronizar clave:', e); }
+
   // Traer datos de ESTE local desde la nube
   try {
     sessionStorage.removeItem('tl_hidratado');
