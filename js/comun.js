@@ -12,6 +12,90 @@ const SB_URL = 'https://pcxlhgdpxfuybzfsquem.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjeGxoZ2RweGZ1eWJ6ZnNxdWVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDIyOTQsImV4cCI6MjA5NjE3ODI5NH0.HJWpFO8TkRsmUx15GtSsUusjvVEhUsi5b_QGoPoPU00';
 
 /* =====================================================================
+   SUPABASE AUTH (Nivel 2) — login real del lado del servidor
+   ===================================================================== */
+const TL_SESS_KEY = 'tl_sb_sess';
+const TL_MAIL_DOM = '@tiendalibre.app';
+
+function _emailDe(usuario, tenant){
+  const base = ((usuario||'') + '.' + (tenant||'')).toLowerCase().replace(/[^a-z0-9.]/g, '');
+  return base + TL_MAIL_DOM;
+}
+function _sbSessGet(){ try{ return JSON.parse(localStorage.getItem(TL_SESS_KEY)||'null'); }catch(e){ return null; } }
+function _sbSessSet(s){ if(s) localStorage.setItem(TL_SESS_KEY, JSON.stringify(s)); else localStorage.removeItem(TL_SESS_KEY); }
+function authLogueado(){ return !!_sbSessGet(); }
+function authUserId(){ const s=_sbSessGet(); return s ? s.user_id : null; }
+
+async function _authPost(path, body){
+  const res = await fetch(SB_URL + path, {
+    method:'POST',
+    headers:{ apikey: SB_KEY, 'Content-Type':'application/json' },
+    body: JSON.stringify(body||{})
+  });
+  const txt = await res.text();
+  let data = null; try{ data = txt ? JSON.parse(txt) : null; }catch(e){ data = { raw: txt }; }
+  return { ok: res.ok, status: res.status, data };
+}
+function _guardarSesion(d){
+  if(!d || !d.access_token) return null;
+  const sess = {
+    access_token: d.access_token,
+    refresh_token: d.refresh_token || '',
+    user_id: (d.user && d.user.id) || d.user_id || null,
+    expira: Date.now() + ((d.expires_in||3600)*1000) - 60000   // 1 min de margen
+  };
+  _sbSessSet(sess);
+  return sess;
+}
+async function authSignUp(email, password){
+  const r = await _authPost('/auth/v1/signup', { email, password });
+  if (r.ok && r.data && r.data.access_token) return _guardarSesion(r.data);
+  return null;
+}
+async function authSignIn(email, password){
+  const r = await _authPost('/auth/v1/token?grant_type=password', { email, password });
+  if (r.ok && r.data && r.data.access_token) return _guardarSesion(r.data);
+  return null;
+}
+async function _authRefresh(){
+  const s = _sbSessGet(); if(!s || !s.refresh_token) return null;
+  const r = await _authPost('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh_token });
+  if (r.ok && r.data && r.data.access_token) return _guardarSesion(r.data);
+  return null;
+}
+async function authToken(){
+  const s = _sbSessGet(); if(!s) return null;
+  if (Date.now() < (s.expira||0)) return s.access_token;
+  const ns = await _authRefresh();
+  return ns ? ns.access_token : null;
+}
+function authSignOut(){ _sbSessSet(null); }
+
+async function sbRPC(fn, body){
+  const tok = await authToken();
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST',
+    headers:{ apikey: SB_KEY, Authorization:'Bearer '+(tok||SB_KEY), 'Content-Type':'application/json' },
+    body: JSON.stringify(body||{})
+  });
+  const txt = await res.text();
+  if(!res.ok) throw new Error(txt || ('rpc '+fn+' '+res.status));
+  try{ return txt ? JSON.parse(txt) : null; }catch(e){ return txt; }
+}
+
+/* Crea/entra a la cuenta segura del DUEÑO y la vincula a la tienda */
+async function asegurarCuentaSeguraDueno(usuario, password, codigo){
+  if(!usuario || !password || !codigo) return { ok:false, msg:'Faltan datos' };
+  const email = _emailDe(usuario, codigo);
+  let sess = await authSignIn(email, password);
+  if (!sess){ await authSignUp(email, password); sess = await authSignIn(email, password); }
+  if (!sess) return { ok:false, msg:'No se pudo crear la cuenta segura (la contraseña debe tener 6+ caracteres).' };
+  try { await sbRPC('reclamar_tienda', { p_codigo: codigo, p_usuario: usuario }); }
+  catch(e){ return { ok:false, msg:'Cuenta creada, pero no se pudo vincular: ' + (e.message||e) }; }
+  return { ok:true, email };
+}
+
+/* =====================================================================
    SYNC MULTI-INQUILINO — 1 fila por local. Tabla: tiendalibre_backups
    ===================================================================== */
 const TL_SYNC_KEYS = [
@@ -48,13 +132,14 @@ async function tlNubeGuardar() {
   if (!_tlPush) return;
   const codigo = _tlCodigo();
   if (!codigo) return;
+  const bearer = (await authToken()) || SB_KEY;
   try {
     // Leemos lo que ya hay en la nube para NO pisar las ventas de los clientes
     let datos = {};
     try {
       const r = await fetch(
         `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
-        { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
+        { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + bearer } }
       );
       if (r.ok) { const rows = await r.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
     } catch (e) {}
@@ -66,7 +151,7 @@ async function tlNubeGuardar() {
     await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method: 'POST',
       headers: {
-        apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY,
+        apikey: SB_KEY, Authorization: 'Bearer ' + bearer,
         'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates'
       },
       body: JSON.stringify({ tenant_id: codigo, datos, updated_at: new Date().toISOString() })
@@ -77,10 +162,11 @@ async function tlNubeGuardar() {
 async function tlNubeCargar() {
   const codigo = _tlCodigo();
   if (!codigo) return { hydrated: false, changed: false };
+  const bearer = (await authToken()) || SB_KEY;
   try {
     const res = await fetch(
       `${SB_URL}/rest/v1/tiendalibre_backups?tenant_id=eq.${encodeURIComponent(codigo)}&select=datos&limit=1`,
-      { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
+      { cache: 'no-store', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + bearer } }
     );
     let rows = [];
     if (res.ok) rows = await res.json();
@@ -169,6 +255,7 @@ async function loginAdmin(user, pass) {
 }
 function logoutAdmin() {
   sessionStorage.removeItem('tl_logged');
+  try { authSignOut(); } catch(e){}
   location.reload();
 }
 
