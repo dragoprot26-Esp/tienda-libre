@@ -218,6 +218,7 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     <div class="err" id="loginErr"></div>
     <button class="btn btn-block" id="loginBtn" style="margin-top:16px">Ingresar →</button>
     <button class="link" id="linkActivar">🔑 Primera vez — activar mi licencia</button>
+    <button class="link" id="linkRecuperar" style="margin-top:2px">¿Olvidaste tu contraseña?</button>
   </div>
 </div>
 
@@ -387,6 +388,23 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
   </div>
 </div>
 
+<!-- ===== MODAL RECUPERAR ACCESO ===== -->
+<div class="overlay" id="ovRecuperar">
+  <div class="sheet" style="max-width:440px">
+    <button class="close" data-close>×</button>
+    <h3>Recuperar acceso</h3>
+    <div class="bio-row" style="display:block;margin-top:6px">
+      <b>👑 Soy el dueño</b>
+      <div class="hint">Reactivá tu licencia con tu código y volvés a entrar. Si no lo tenés a mano, pedíselo a tu proveedor.</div>
+      <button class="btn btn-soft btn-block" id="btnRecActivar" style="margin-top:10px">🔑 Reactivar mi licencia</button>
+    </div>
+    <div class="bio-row" style="display:block;margin-top:10px">
+      <b>🧑‍💼 Soy ayudante</b>
+      <div class="hint">Pedile al dueño de la tienda que te genere una contraseña nueva desde el panel (Equipo → tu nombre → ✏️). En un toque te la cambia.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL PRODUCTO ===== -->
 <div class="overlay" id="ovProd">
   <div class="sheet">
@@ -479,8 +497,8 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/comun.js?v=13"></script>
-<script src="js/licencia.js?v=13"></script>
-<script src="js/admin.js?v=13"></script>
+<script src="js/comun.js?v=14"></script>
+<script src="js/licencia.js?v=14"></script>
+<script src="js/admin.js?v=14"></script>
 </body>
 </html>
