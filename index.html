@@ -367,6 +367,16 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
 <button id="btnCerrarPreview" onclick="window.close()"
   style="display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(20,20,30,.88);color:#fff;border:none;border-radius:999px;padding:11px 22px;font-weight:700;font-size:.95rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.32)">✕ Cerrar vista previa</button>
 
+<div id="sharePop" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.5);align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--surface);color:var(--text);border-radius:18px;padding:22px;max-width:300px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)">
+    <h3 style="margin:0 0 4px;font-size:1.05rem">Compartir tienda</h3>
+    <p style="margin:0 0 16px;font-size:.82rem;color:var(--text-2)">Envialo a tus conocidos 👇</p>
+    <a id="shareWa" href="#" target="_blank" rel="noopener" style="display:block;background:#25D366;color:#fff;padding:12px;border-radius:12px;text-decoration:none;font-weight:700;margin-bottom:10px">📱 WhatsApp</a>
+    <a id="shareMail" href="#" style="display:block;background:var(--accent);color:var(--on-accent);padding:12px;border-radius:12px;text-decoration:none;font-weight:700">✉️ Mail</a>
+    <button onclick="document.getElementById('sharePop').style.display='none'" style="margin-top:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem">Cancelar</button>
+  </div>
+</div>
+
 <header>
   <div class="logo" id="hLogo">🛍️</div>
   <div class="brand">
@@ -390,6 +400,13 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
   <p id="heroSub">Elegí lo que te gusta, sumalo al carrito y retiralo en el local con tu código. Sin filas, sin esperas.</p>
 </section>
 
+<div style="text-align:center;padding:4px 20px 10px">
+  <button id="btnCompartir" onclick="compartirTienda()"
+    style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;padding:10px 20px;font-weight:600;font-size:.9rem;cursor:pointer;box-shadow:var(--shadow)">
+    📤 Compartir esta tienda
+  </button>
+</div>
+
 <section class="promos-sec" id="promosSec" style="display:none">
   <h2>🔥 Promos</h2>
   <div class="promos-scroll" id="promosScroll"></div>
@@ -397,7 +414,19 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
 
 <nav class="cats" id="cats"></nav>
 <main class="grid" id="grid"></main>
-<footer>Hecho con <b>Tienda Libre</b> · tu tienda online en minutos</footer>
+<footer>
+  <div style="max-width:430px;margin:0 auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 18px">
+    <div style="font-weight:800;color:var(--text);font-size:.95rem;margin-bottom:4px">🛍️ ¿Querés una tienda como esta?</div>
+    <div style="color:var(--text-2);font-size:.8rem;line-height:1.5;margin-bottom:10px">
+      <b>Tienda Libre</b> — tu tienda online en minutos: productos, promos y pedidos para retirar, sin complicaciones.
+    </div>
+    <a href="mailto:dragoprot26@gmail.com?subject=Solicito%20mi%20Tienda%20Libre&body=Hola%2C%20quiero%20solicitar%20mi%20aplicaci%C3%B3n%20de%20Tienda%20Libre%20para%20mi%20negocio."
+       style="display:inline-block;background:var(--accent);color:var(--on-accent);text-decoration:none;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:999px">
+      ✉️ Solicitala: dragoprot26@gmail.com
+    </a>
+    <div style="color:var(--muted);font-size:.72rem;margin-top:8px">Solicitá tu aplicación de Tienda Libre para tu negocio. Tu consulta no molesta 😊</div>
+  </div>
+</footer>
 
 <!-- Modal detalle -->
 <div class="overlay" id="ovDet">
@@ -834,6 +863,17 @@ document.querySelectorAll('input[name=via]').forEach(r => r.addEventListener('ch
   const via = (document.querySelector('input[name=via]:checked')||{}).value;
   $('coEmail').style.display = (via==='email') ? 'block' : 'none';
 }));
+
+/* ============ COMPARTIR ============ */
+function compartirTienda(){
+  const url = location.href;
+  const txt = `¡Mirá la tienda ${TIENDA.nombre}! 🛍️ ${url}`;
+  const wa = $('shareWa'), ml = $('shareMail');
+  if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent(txt);
+  if (ml) ml.href = 'mailto:?subject=' + encodeURIComponent('Tienda ' + TIENDA.nombre) + '&body=' + encodeURIComponent(txt);
+  const pop = $('sharePop');
+  if (pop) pop.style.display = 'flex';
+}
 
 /* ============ INIT ============ */
 (async function init(){
