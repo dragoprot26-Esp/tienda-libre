@@ -913,10 +913,12 @@ $('cLogoFile').addEventListener('change', e=>{
 });
 $('cLogoEmoji').addEventListener('input', e=>{ logoImg=''; const v=e.target.value.trim()||'🛍️'; $('cLogoPrev').innerHTML=escHtml(v); });
 
-$('btnVista').addEventListener('click', ()=>{
+$('btnVista').addEventListener('click', async ()=>{
+  const w = window.open('about:blank', '_blank');   // abrimos la pestaña YA (gesto del usuario) para que no la bloquee el navegador
+  try { if (typeof tlNubeGuardar === 'function') await tlNubeGuardar(); } catch(e){}   // subimos lo último ANTES de mostrar
   const url = getLinkTienda();
-  const w = window.open(url, '_blank');
-  if (!w) location.href = url;   // si el navegador bloquea la pestaña nueva, abrimos la tienda acá
+  if (w) w.location.href = url;   // apuntamos la pestaña a la tienda, ya con datos frescos
+  else location.href = url;       // si el navegador bloqueó la pestaña, abrimos acá
 });
 $('btnSalir').addEventListener('click', logoutAdmin);
 $('btnRefVentas').addEventListener('click', refrescarVentasNube);
