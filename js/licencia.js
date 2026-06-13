@@ -6,12 +6,13 @@ const PROVEEDOR_MAIL = 'dragoprot26@gmail.com';
 
 async function sbGetLicencia(codigo) {
   try {
-    const res = await fetch(
-      `${SB_URL}/rest/v1/licencias?select=*&codigo=eq.${encodeURIComponent(codigo)}&limit=1`,
-      { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
-    );
-    const data = await res.json();
-    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/validar_licencia`, {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_codigo: codigo })
+    });
+    const data = res.ok ? await res.json() : null;
+    return (data && typeof data === 'object' && data.codigo) ? data : null;
   } catch (e) { return null; }
 }
 
@@ -51,7 +52,7 @@ async function activarLicencia(codigo) {
   const remote = await sbGetLicencia(codigo);
   if (!remote) return false;
 
-  if (!remote.activa && !remote.fecha_activacion) await sbActivarLicencia(codigo);
+  // La activación ahora la hace validar_licencia() del lado del servidor.
 
   const expira = remote.fecha_vencimiento
     ? new Date(remote.fecha_vencimiento).getTime()
