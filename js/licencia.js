@@ -93,12 +93,16 @@ async function activarLicencia(codigo) {
     sessionStorage.removeItem('tl_hidratado');
     const r = await tlNubeCargar();
     if (r && r.nuevo) {
-      // Local nuevo: arranca vacío, con el nombre del negocio del panel
+      // Local nuevo: arranca LIMPIO (que no quede NADA del inquilino anterior en este navegador)
       _origSetItem('productos', '[]');
+      _origSetItem('promos', '[]');
+      _origSetItem('colaboradores', '[]');
       _origSetItem('logo', '🛍️');
       _origSetItem('tema', 'aurora');
       _origSetItem('tagline', 'Ropa & accesorios · Encargá y retirá');
-      if (remote.nombre_negocio) _origSetItem('nombre_local', remote.nombre_negocio);
+      _origSetItem('direccion', '');
+      _origSetItem('telefono', '');
+      _origSetItem('nombre_local', remote.nombre_negocio || 'Tienda');
       if (remote.correo_cliente) _origSetItem('admin_email', remote.correo_cliente);
       await tlNubeGuardar();
     }
