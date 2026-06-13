@@ -186,6 +186,7 @@ function guardarProd(){
   let prods = getProductos();
   if (editId) prods = prods.map(p=>p.id===editId?prod:p);
   else prods.unshift(prod);
+  if (!_topeImagenesOk(prods, getPromos())) return;
   setProductos(prods);
   cerrarTodo();
   pintarProductos();
@@ -240,6 +241,18 @@ let promoImg = '';
 
 function getPromos(){ try{ return JSON.parse(localStorage.getItem('promos')||'[]'); }catch(e){ return []; } }
 function setPromos(arr){ localStorage.setItem('promos', JSON.stringify(arr)); }
+
+/* ---------- Tope de imágenes por inquilino (para arrancar, sin Storage) ---------- */
+const TOPE_IMAGENES = 40;
+function _imgsEnArray(arr){ let n=0; (arr||[]).forEach(x=>{ if(esImg(x.imagen)) n++; }); return n; }
+function _topeImagenesOk(prodsArr, promosArr){
+  const total = _imgsEnArray(prodsArr) + _imgsEnArray(promosArr);
+  if (total > TOPE_IMAGENES){
+    toast('⚠️ Llegaste al tope de '+TOPE_IMAGENES+' imágenes (productos + promos). Borrá alguna para sumar otra.');
+    return false;
+  }
+  return true;
+}
 
 function pintarPromosPanel(){
   const proms = getPromos();
@@ -306,6 +319,7 @@ function guardarPromo(){
   let proms = getPromos();
   if(promoEdit) proms = proms.map(p=>p.id===promoEdit?promo:p);
   else proms.unshift(promo);
+  if (!_topeImagenesOk(getProductos(), proms)) return;
   setPromos(proms);
   cerrarTodo(); pintarPromosPanel();
   toast(promoEdit?'✅ Promo actualizada':'✅ Promo agregada');
