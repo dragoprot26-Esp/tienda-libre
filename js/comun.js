@@ -197,9 +197,9 @@ async function tlNubeGuardar() {
   if (!_tlPush) return;
   const codigo = _tlCodigo();
   if (!codigo) return;
-  const bearer = (await authToken()) || SB_KEY;
-  try {
-    // Leemos lo que ya hay en la nube para NO pisar las ventas de los clientes
+
+  // Arma el cuerpo (sin pisar las ventas de los clientes) y hace el POST con el bearer dado
+  async function _subir(bearer) {
     let datos = {};
     try {
       const r = await fetch(
@@ -208,12 +208,11 @@ async function tlNubeGuardar() {
       );
       if (r.ok) { const rows = await r.json(); if (rows && rows.length && rows[0].datos) datos = rows[0].datos; }
     } catch (e) {}
-    // Sobreescribimos solo las claves del panel (productos, config). 'ventas' queda intacto.
     TL_SYNC_KEYS.forEach(k => {
       const v = localStorage.getItem(k);
       if (v !== null) datos[k] = v;
     });
-    const _resp = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+    return fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method: 'POST',
       headers: {
         apikey: SB_KEY, Authorization: 'Bearer ' + bearer,
@@ -221,11 +220,26 @@ async function tlNubeGuardar() {
       },
       body: JSON.stringify({ tenant_id: codigo, datos, updated_at: new Date().toISOString() })
     });
-    if (!_resp.ok) {
-      console.warn('[TL] La nube rechazó el guardado:', _resp.status);
-      if (typeof window !== 'undefined' && !window._tlSyncWarned && typeof toast === 'function') {
-        window._tlSyncWarned = true;
-        toast('⚠️ Tu tienda no se está publicando. Cerrá sesión y volvé a entrar.');
+  }
+
+  try {
+    const tok = await authToken();
+    let resp = await _subir(tok || SB_KEY);
+
+    // Si el token venció o fue rechazado (401/403), refrescamos la sesión y reintentamos UNA vez
+    if (!resp.ok && (resp.status === 401 || resp.status === 403)) {
+      const ns = await _authRefresh();
+      if (ns && ns.access_token) resp = await _subir(ns.access_token);
+    }
+
+    if (!resp.ok) {
+      console.warn('[TL] La nube rechazó el guardado:', resp.status);
+      if (typeof toast === 'function') {
+        const ahora = Date.now();
+        if (!window._tlLastSyncWarn || (ahora - window._tlLastSyncWarn) > 8000) {
+          window._tlLastSyncWarn = ahora;
+          toast('⚠️ No se pudo publicar tu tienda. Cerrá sesión y volvé a entrar para que se publiquen los cambios.');
+        }
       }
     }
   } catch (e) { console.warn('[TL] No se pudo subir a la nube:', e); }
