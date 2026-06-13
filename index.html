@@ -363,6 +363,9 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
 </style>
 </head>
 <body>
+<!-- Botón "cerrar" — solo aparece cuando la página se abre como vista previa (desde el ojo del panel) -->
+<button id="btnCerrarPreview" onclick="window.close()"
+  style="display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(20,20,30,.88);color:#fff;border:none;border-radius:999px;padding:11px 22px;font-weight:700;font-size:.95rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.32)">✕ Cerrar vista previa</button>
 
 <header>
   <div class="logo" id="hLogo">🛍️</div>
@@ -834,6 +837,8 @@ document.querySelectorAll('input[name=via]').forEach(r => r.addEventListener('ch
 
 /* ============ INIT ============ */
 (async function init(){
+  // Si se abrió como vista previa (desde el ojo del panel), mostramos el botón cerrar
+  if (window.opener) { const b = document.getElementById('btnCerrarPreview'); if (b) b.style.display = 'block'; }
   await cargarTienda();
   pintarMarca(); pintarPromos(); pintarCats(); pintarGrid(); actualizarContador();
 })();
