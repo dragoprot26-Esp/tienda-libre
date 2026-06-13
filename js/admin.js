@@ -843,9 +843,15 @@ $('loginBtn').addEventListener('click', async ()=>{
   // 2) Fallback al método anterior (primera vez / puerta abierta), que crea la cuenta
   if (!rol){
     if (await loginAdmin(u,p)) {
+      let r2;
+      try { r2 = await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, tenant); }
+      catch(e){ r2 = { ok:false, msg:(e&&e.message)||'Error de conexión' }; }
+      if (!r2 || !r2.ok){
+        const e=$('loginErr');
+        e.textContent = '⚠️ ' + ((r2&&r2.msg) || 'No se pudo crear tu cuenta segura.') + ' Tu tienda no se publicará. Pedí al administrador una contraseña de 6 caracteres o más.';
+        e.style.display='block'; $('loginPass').value=''; return;
+      }
       rol='dueno'; nombre='Dueño';
-      try { await asegurarCuentaSeguraDueno(localStorage.getItem('admin_user')||u, p, tenant); }
-      catch(e){ console.warn('cuenta segura:', e); }
     } else {
       const r = await asegurarCuentaSeguraColab(u, p, tenant);
       if (r.ok){

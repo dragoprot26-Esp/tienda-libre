@@ -213,7 +213,7 @@ async function tlNubeGuardar() {
       const v = localStorage.getItem(k);
       if (v !== null) datos[k] = v;
     });
-    await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
+    const _resp = await fetch(`${SB_URL}/rest/v1/tiendalibre_backups`, {
       method: 'POST',
       headers: {
         apikey: SB_KEY, Authorization: 'Bearer ' + bearer,
@@ -221,6 +221,13 @@ async function tlNubeGuardar() {
       },
       body: JSON.stringify({ tenant_id: codigo, datos, updated_at: new Date().toISOString() })
     });
+    if (!_resp.ok) {
+      console.warn('[TL] La nube rechazó el guardado:', _resp.status);
+      if (typeof window !== 'undefined' && !window._tlSyncWarned && typeof toast === 'function') {
+        window._tlSyncWarned = true;
+        toast('⚠️ Tu tienda no se está publicando. Cerrá sesión y volvé a entrar.');
+      }
+    }
   } catch (e) { console.warn('[TL] No se pudo subir a la nube:', e); }
 }
 
