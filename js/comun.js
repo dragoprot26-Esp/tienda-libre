@@ -170,6 +170,7 @@ const TL_SYNC_KEYS = [
 
 let _tlPush = false;
 let _tlTimer = null;
+let _tlPushPendiente = false;   // hay cambios locales esperando subir (para no pisarlos al refrescar)
 const _origSetItem = localStorage.setItem.bind(localStorage);
 
 function _tlCodigo() {
@@ -189,6 +190,7 @@ function _tlCodigo() {
 function tlHabilitarSync() { _tlPush = true; }
 
 function _tlDebounce() {
+  _tlPushPendiente = true;
   if (_tlTimer) clearTimeout(_tlTimer);
   _tlTimer = setTimeout(tlNubeGuardar, 800);
 }
@@ -196,7 +198,7 @@ function _tlDebounce() {
 async function tlNubeGuardar() {
   if (!_tlPush) return;
   const codigo = _tlCodigo();
-  if (!codigo) return;
+  if (!codigo) { _tlPushPendiente = false; return; }
 
   // Arma el cuerpo (sin pisar las ventas de los clientes) y hace el POST con el bearer dado
   async function _subir(bearer) {
@@ -243,6 +245,7 @@ async function tlNubeGuardar() {
       }
     }
   } catch (e) { console.warn('[TL] No se pudo subir a la nube:', e); }
+  finally { _tlPushPendiente = false; }
 }
 
 async function tlNubeCargar() {

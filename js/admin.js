@@ -76,11 +76,9 @@ function mostrarLogin(){ $('vistaLogin').style.display='grid'; $('vistaPanel').s
 async function mostrarPanel(){
   $('vistaLogin').style.display='none';
   $('vistaPanel').style.display='block';
-  // Hidratar de la nube una vez por sesión, luego habilitar sync
-  if (sessionStorage.getItem('tl_hidratado') !== '1') {
-    try { await tlNubeCargar(); } catch(e){}
-    sessionStorage.setItem('tl_hidratado','1');
-  }
+  // Hidratar de la nube en cada entrada (así se ve lo que cargó el colaborador), luego habilitar sync
+  try { await tlNubeCargar(); } catch(e){}
+  sessionStorage.setItem('tl_hidratado','1');
   tlHabilitarSync();
   pintarBarra();
   pintarConfig();
@@ -164,7 +162,7 @@ function addExtraRow(data){
   $('extraCont').appendChild(div);
 }
 
-function guardarProd(){
+async function guardarProd(){
   const nombre = $('prodNombre').value.trim();
   if (!nombre) { toast('⚠️ Poné un nombre'); return; }
   const extra = [...document.querySelectorAll('#extraCont .extra-row')].map(r=>({
@@ -183,6 +181,7 @@ function guardarProd(){
     ultimos: $('prodUlt').checked,
     extra
   };
+  try { await tlNubeCargar(); } catch(e){}   // traer lo último (por si el colaborador cargó algo)
   let prods = getProductos();
   if (editId) prods = prods.map(p=>p.id===editId?prod:p);
   else prods.unshift(prod);
@@ -193,8 +192,9 @@ function guardarProd(){
   toast(editId ? '✅ Producto actualizado' : '✅ Producto agregado');
 }
 
-function eliminarProd(id){
+async function eliminarProd(id){
   if (!confirm('¿Eliminar este producto?')) return;
+  try { await tlNubeCargar(); } catch(e){}
   setProductos(getProductos().filter(p=>p.id!==id));
   pintarProductos();
   toast('Producto eliminado');
@@ -307,7 +307,7 @@ function abrirPromo(id){
   renderSwatches(); renderPromoPreview();
   abrir('ovPromo');
 }
-function guardarPromo(){
+async function guardarPromo(){
   const titulo = $('promoTit').value.trim();
   if(!titulo){ toast('⚠️ Poné un título'); return; }
   const promo = {
@@ -316,6 +316,7 @@ function guardarPromo(){
     etiqueta: $('promoEtq').value.trim(),
     titulo, desc: $('promoDesc').value.trim(), g: promoColor, imagen: promoImg||'', precio: Number($('promoPrecio').value)||0
   };
+  try { await tlNubeCargar(); } catch(e){}
   let proms = getPromos();
   if(promoEdit) proms = proms.map(p=>p.id===promoEdit?promo:p);
   else proms.unshift(promo);
@@ -324,8 +325,9 @@ function guardarPromo(){
   cerrarTodo(); pintarPromosPanel();
   toast(promoEdit?'✅ Promo actualizada':'✅ Promo agregada');
 }
-function eliminarPromo(id){
+async function eliminarPromo(id){
   if(!confirm('¿Eliminar esta promo?')) return;
+  try { await tlNubeCargar(); } catch(e){}
   setPromos(getPromos().filter(p=>p.id!==id));
   pintarPromosPanel();
   toast('Promo eliminada');
@@ -991,6 +993,8 @@ document.addEventListener('click', e=>{
     document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on')); $(tab.dataset.sec).classList.add('on');
     if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
     if (tab.dataset.sec==='secControl') pintarControl();
+    if (tab.dataset.sec==='secProductos' && !_tlPushPendiente) tlNubeCargar().then(()=>pintarProductos()).catch(()=>{});
+    if (tab.dataset.sec==='secPromos' && !_tlPushPendiente) tlNubeCargar().then(()=>pintarPromosPanel()).catch(()=>{});
     return; }
   const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
   const ec=e.target.closest('[data-editcolab]'); if(ec){ abrirColab(ec.dataset.editcolab); return; }
