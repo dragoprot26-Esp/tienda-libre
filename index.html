@@ -471,7 +471,7 @@ footer{text-align:center;color:var(--text-2);font-size:.8rem;padding:10px 20px 2
       <label class="co-lbl">Tu nombre</label>
       <input id="coNombre" class="co-input" placeholder="Nombre y apellido">
       <label class="co-lbl">Tu teléfono</label>
-      <input id="coTel" class="co-input" type="tel" inputmode="tel" placeholder="Ej: 221 555 1234">
+      <input id="coTel" class="co-input" type="tel" inputmode="tel" value="+549 " placeholder="+549 221 555 1234">
       <label class="co-lbl">¿Cómo querés recibir tu código?</label>
       <label class="co-opt"><input type="radio" name="via" value="whatsapp" checked> 🟢 Por WhatsApp</label>
       <label class="co-opt"><input type="radio" name="via" value="email"> ✉️ Por mail</label>
@@ -759,7 +759,8 @@ async function confirmarEncargo(){
   const via = (document.querySelector('input[name=via]:checked')||{}).value || 'whatsapp';
   const email = $('coEmail').value.trim();
   const err = $('coErr');
-  if(!nombre || !tel){ err.textContent='Completá tu nombre y teléfono.'; return; }
+  if(!nombre){ err.textContent='Completá tu nombre y teléfono.'; return; }
+  if(tel.replace(/\D/g,'').replace(/^549/,'').length < 6){ err.textContent='Completá tu número de teléfono después del +549.'; return; }
   if(via==='email' && !email){ err.textContent='Escribí tu mail para enviarte el código.'; return; }
   err.textContent='';
 
