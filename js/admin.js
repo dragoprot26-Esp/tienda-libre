@@ -985,6 +985,44 @@ $('btnCopyColabLink').addEventListener('click', async ()=>{
   catch(e){ toast('Copialo del texto de arriba 🙂'); }
 });
 
+/* ===== Copias de seguridad (rollback) ===== */
+let _backupsBusy = false;
+async function pintarBackups(){
+  const cont = $('listaBackups'); if(!cont) return;
+  cont.innerHTML = `<div class="hint">Cargando copias…</div>`;
+  let lista = [];
+  try { lista = await tlHistListar(); } catch(e){ lista = []; }
+  if(!lista.length){
+    cont.innerHTML = `<div class="hint">Todavía no hay copias guardadas. Se van creando solas a medida que editás la tienda.</div>`;
+    return;
+  }
+  cont.innerHTML = lista.map(b=>{
+    let fecha=''; try{ fecha = new Date(b.guardado).toLocaleString('es-AR'); }catch(e){ fecha = b.guardado||''; }
+    return `<div class="venta-card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="min-width:0">
+        <div class="vc-cod">${escHtml(fecha)}</div>
+        <div class="vc-fecha">${b.productos||0} productos · ${b.promos||0} promos · ${b.colaboradores||0} colaboradores</div>
+      </div>
+      <button class="btn btn-soft btn-sm" data-restbackup="${escHtml(String(b.id))}" style="flex:0 0 auto">Restaurar</button>
+    </div>`;
+  }).join('');
+}
+async function restaurarBackup(id){
+  if(_backupsBusy) return;
+  if(!confirm('¿Restaurar esta copia? La versión actual quedará respaldada, así que siempre podés volver atrás.')) return;
+  _backupsBusy = true;
+  try {
+    const ok = await tlHistRestaurar(parseInt(id,10)||id);
+    if(ok){
+      toast('✅ Copia restaurada. Tu tienda volvió a esa versión.');
+      setTimeout(()=>location.reload(), 900);
+    } else {
+      toast('No se pudo restaurar la copia.');
+    }
+  } finally { _backupsBusy = false; }
+}
+{ const _b=$('btnRefBackups'); if(_b) _b.addEventListener('click', pintarBackups); }
+
 document.addEventListener('click', e=>{
   if (e.target.closest('[data-close]')) { cerrarTodo(); return; }
   if (e.target.classList.contains('overlay')) { cerrarTodo(); return; }
@@ -993,9 +1031,11 @@ document.addEventListener('click', e=>{
     document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on')); $(tab.dataset.sec).classList.add('on');
     if (tab.dataset.sec==='secVentas') tab.classList.remove('has-new');
     if (tab.dataset.sec==='secControl') pintarControl();
+    if (tab.dataset.sec==='secBackups') pintarBackups();
     if (tab.dataset.sec==='secProductos' && !_tlPushPendiente) tlNubeCargar().then(()=>pintarProductos()).catch(()=>{});
     if (tab.dataset.sec==='secPromos' && !_tlPushPendiente) tlNubeCargar().then(()=>pintarPromosPanel()).catch(()=>{});
     return; }
+  const rb=e.target.closest('[data-restbackup]'); if(rb){ restaurarBackup(rb.dataset.restbackup); return; }
   const ve=e.target.closest('[data-vest]'); if(ve){ const a=ve.dataset.vest.split('|'); cambiarEstadoVenta(a[0], a[1]); return; }
   const ec=e.target.closest('[data-editcolab]'); if(ec){ abrirColab(ec.dataset.editcolab); return; }
   const dc=e.target.closest('[data-delcolab]'); if(dc){ eliminarColab(dc.dataset.delcolab); return; }

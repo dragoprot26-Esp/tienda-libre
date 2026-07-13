@@ -285,6 +285,35 @@ localStorage.setItem = function (k, v) {
 };
 
 /* =====================================================================
+   COPIAS DE SEGURIDAD / ROLLBACK — historial en la nube (últimas 10)
+   ===================================================================== */
+async function tlHistListar() {
+  const codigo = _tlCodigo();
+  if (!codigo) return [];
+  try {
+    const r = await sbRPC('tiendalibre_hist_listar', { p_codigo: codigo });
+    return Array.isArray(r) ? r : [];
+  } catch (e) { return []; }
+}
+
+async function tlHistRestaurar(id) {
+  const codigo = _tlCodigo();
+  if (!codigo) return false;
+  try {
+    const r = await sbRPC('tiendalibre_hist_restaurar', { p_codigo: codigo, p_id: id });
+    if (r && r.ok && r.datos) {
+      // Reescribimos las claves sincronizables con _origSetItem para no
+      // disparar un nuevo push (el servidor ya guardó esta versión).
+      TL_SYNC_KEYS.forEach(k => {
+        if (r.datos[k] !== undefined && r.datos[k] !== null) _origSetItem(k, r.datos[k]);
+      });
+      return true;
+    }
+    return false;
+  } catch (e) { return false; }
+}
+
+/* =====================================================================
    HELPERS
    ===================================================================== */
 function getProductos() {
