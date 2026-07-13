@@ -249,6 +249,7 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
     <button class="tab" data-sec="secVentas" id="tabVentas">🔔 Ventas<span class="badge-n" id="ventasBadge" style="display:none">0</span></button>
     <button class="tab" data-sec="secControl" id="tabControl">📊 Control</button>
     <button class="tab" data-sec="secConfig">⚙️ Ajustes</button>
+    <button class="tab" data-sec="secBackups" id="tabBackups">🛟 Copias</button>
   </div>
 
   <div class="wrap">
@@ -393,6 +394,13 @@ label{font-size:.82rem;font-weight:600;color:var(--ink-2);display:block;margin:1
           <button class="btn btn-soft btn-sm" id="btnBio" type="button">Activar</button>
         </div>
       </div>
+    </section>
+
+    <!-- COPIAS DE SEGURIDAD -->
+    <section id="secBackups" class="sec">
+      <p class="hint">Se guarda una copia automática cada vez que cambian los datos de tu tienda. Se conservan las últimas 10; podés volver a cualquiera con un toque. Restaurar también queda respaldado, así que siempre podés volver atrás.</p>
+      <button class="btn btn-soft btn-sm" id="btnRefBackups" style="margin:6px 0 14px">🔄 Actualizar lista</button>
+      <div id="listaBackups"></div>
     </section>
   </div>
 </div>
