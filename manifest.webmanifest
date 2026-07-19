@@ -1,0 +1,16 @@
+{
+  "name": "Tienda Libre — Ropa & Accesorios",
+  "short_name": "Tienda Libre",
+  "description": "Tienda de ropa online · catálogo y pedidos por WhatsApp.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0712",
+  "theme_color": "#ff7a59",
+  "icons": [
+    { "src": "tl-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "tl-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "tl-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
